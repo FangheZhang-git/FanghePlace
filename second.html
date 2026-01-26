@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Scholarship Matching </title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="css/header.css">
+  <link rel="stylesheet" href="css/second.css">
+</head>
+
+<body>
+  <header class="header">
+    <a href="index.html">
+      <h1 class="templogo">ScholarMatch</h1>
+    </a>
+  </header>
+
+
+  <main class="searchBox">
+    <h2>Find Scholarships That Match You</h2>
+    <p class="subtitle">
+      Enter your academic and background information to discover scholarships you qualify for.
+    </p>
+
+    <div class="searchForm">
+      <h3>Student Profile</h3>
+
+      <form id="Form">
+
+        <!-- GPA -->
+        <div class="info">
+          <label for="gpa">Unweighted GPA (0.0 - 4.0)</label>
+          <input type="number" id="gpa" min="0" max="4" step="0.01" required>
+        </div>
+
+        <!-- SAT -->
+        <div class="info">
+          <label for="sat">SAT Score (200 - 1600)</label>
+          <input type="number" id="sat" min="200" max="1600">
+        </div>
+
+        <!-- ACT -->
+        <div class="info">
+          <label for="act">ACT Score (1 - 36)</label>
+          <input type="number" id="act" min="1" max="36">
+        </div>
+
+        <!-- Citizenship -->
+        <div class="info">
+          <label for="citizenship">Citizenship Status</label>
+          <select id="citizenship" required>
+            <option value="">Select</option>
+            <option>U.S. Citizen</option>
+            <option>Permanent Resident</option>
+            <option>International Student</option>
+          </select>
+        </div>
+
+        <!-- State of Residency -->
+        <div class="info" id="RESIDENCY" style="display: none">
+          <label for="residency">State of Residency</label>
+          <select id="residency" >
+            <option value="">Select your state</option>
+            <option value="AL">Alabama</option>
+            <option value="CA">California</option>
+            <option value="FL">Florida</option>
+            <option value="GA">Georgia</option>
+            <option value="MA">Massachusetts</option>
+            <option value="NY">New York</option>
+            <option value="TX">Texas</option>
+            <option value="WA">Washington</option>
+            <option value="NA">NA</option>
+
+          </select>
+        </div>
+
+
+        <!-- Intended Major -->
+        <div class="info">
+          <label for="major">Intended Major</label>
+          <select id="major">
+            <option value="">Select a major</option>
+            <option>Computer Science</option>
+            <option>Engineering</option>
+            <option>Biology</option>
+            <option>Chemistry</option>
+            <option>Mathematics</option>
+            <option>Business</option>
+            <option>Economics</option>
+            <option>Finance</option>
+            <option>Political Science</option>
+            <option>Psychology</option>
+            <option>Pre-Med / Health Sciences</option>
+            <option>Environmental Science</option>
+            <option>Undeclared</option>
+            <option>Other</option>
+          </select>
+        </div>
+
+
+        <!-- Coursework -->
+        <div class="info">
+          <label>Advanced Coursework (check all that apply)</label>
+
+          <div class="checkbox-group">
+            <label>
+              <input type="checkbox" id="apCheckbox">
+              AP Classes
+            </label>
+
+            <label>
+              <input type="checkbox" id="honorsCheckbox">
+              Honors Classes
+            </label>
+          </div>
+        </div>
+
+        <!-- AP Details -->
+        <div class="info" id="apDetails" style="display: none;">
+          <label>AP Coursework Details</label>
+
+          <div class="ap-inputs">
+            <input type="number" id="apCount" min="0" placeholder="Number of AP classes taken">
+
+            <input type="number" id="apHighScores" min="0" placeholder="Number of AP scores 4 or 5">
+          </div>
+        </div>
+
+        <!-- Honors Details -->
+        <div class="info" id="honorsDetails" style="display: none;">
+          <label>Honors Coursework Details</label>
+
+          <input type="number" id="honorsCount" min="0" placeholder="Number of Honors classes taken">
+        </div>
+
+
+
+        <!-- First-Gen -->
+        <div class="info">
+          <label>First-Generation College Student?</label>
+          <div class="radio-group">
+            <label><input type="radio" name="firstgen" value="yes"> Yes</label>
+            <label><input type="radio" name="firstgen" value="no"> No</label>
+          </div>
+        </div>
+
+        <!-- Leadership -->
+        <div class="info">
+          <label id="Question">Have you held a leadership role in any organization?</label>
+          <p>(e.g., a club, after-school activity, or organization outside of school)</p>
+          <div>
+
+            <label><input type="radio" name="leadership" value="yes">Yes</label>
+            <label><input type="radio" name="leadership" value="no">No</label>
+          </div>
+
+
+        </div>
+
+        <!-- Household Income -->
+        <div class="info">
+          <label for="income">Household Income Range</label>
+          <select id="income">
+            <option value="">Select</option>
+            <option>Below $30,000</option>
+            <option>$30,000 - $60,000</option>
+            <option>$60,000 - $100,000</option>
+            <option>$100,000 - $150,000</option>
+            <option>Above $150,000</option>
+          </select>
+        </div>
+
+        <!-- Household Size -->
+        <div class="info">
+          <label for="household">Household Size</label>
+          <input type="number" id="household" min="1">
+        </div>
+
+        <!-- Awards -->
+        <div class="info">
+          <label>Have you won a state or national award?</label>
+          <div class="radio-group">
+            <label><input type="radio" name="award" value="yes"> Yes</label>
+            <label><input type="radio" name="award" value="no"> No</label>
+          </div>
+        </div>
+
+        <!-- Essays -->
+        <div class="info">
+          <label>Willing to write essays?</label>
+          <div class="radio-group">
+            <label><input type="radio" name="essay" value="yes"> Yes</label>
+            <label><input type="radio" name="essay" value="no"> No</label>
+          </div>
+        </div>
+
+        <!-- Submit -->
+        <button type="submit" class="primary">Find Scholarships</button>
+
+      </form>
+    </div>
+  </main>
+
+
+
+
+  <script src="javascript/script.js"></script>
+  <script src="javascript/checkbox.js"></script>
+</body>
+
+</html>

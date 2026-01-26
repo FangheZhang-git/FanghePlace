@@ -1,0 +1,47 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: Arial, sans-serif;
+  background: white;
+  color: black;
+}
+
+a{
+  text-decoration: none;
+}
+
+
+#Question{
+  margin: 0;
+}
+
+/* Apply Rigth Now Button on the card */
+
+.apply-right-now {
+    display: inline-block;
+    margin-top: 12px;
+    padding: 10px 16px;
+    background-color: #2563eb;
+    color: white;
+    text-decoration: none;
+    border-radius: 6px;
+    font-weight: 600;
+    transition: background-color 0.2s ease;
+}
+
+.apply-right-now:hover {
+    background-color: #1e40af;
+}
+
+.outside {
+  max-width: 1000px;
+  margin: 50px auto;
+  /* padding: 20px; */
+}
+#results-title{
+  padding: 0 0 15px 0;
+}

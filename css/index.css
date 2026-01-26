@@ -1,0 +1,28 @@
+#main {
+  text-align: center;
+  padding: 60px 20px 20px 20px;
+}
+
+/* big welcome text */
+#welcome {
+  font-size: 48px;
+  font-weight: bold;
+  margin-bottom: 20px;
+}
+
+/* mission text */
+#mission {
+  font-size: 18px;
+  color: #555;
+  max-width: 700px;
+  margin: 0 auto 30px;
+}
+/* big button */
+#search-button {
+  font-size: 18px;
+  padding: 14px 28px;
+  background: #0000FF;
+  color: white;
+  border: none;
+  cursor: pointer;
+}

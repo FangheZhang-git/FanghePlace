@@ -1,0 +1,62 @@
+/* Outside paper */
+.searchBox {
+  max-width: 1100px;
+  margin: 3rem auto;
+  padding: 0 20px;
+  text-align: center;
+}
+
+.searchBox h2 {
+  font-size: 2rem;
+  color: #0000FF;
+}
+
+.subtitle {
+  margin-top: 0.5rem;
+  color: #555;
+}
+
+
+
+/* Inside Form */
+.searchForm {
+  background:#FDFBD4;
+  max-width: 500px;
+  margin: 2rem auto;
+  padding: 2rem;
+  border-radius: 12px;
+  text-align: left;
+}
+
+.searchForm h3 {
+  font-size: 22px;
+  margin-bottom: 1.5rem;
+  color: black;
+}
+
+.info {
+  margin-bottom: 1.2rem;
+}
+
+label {
+  display: block;
+  margin-bottom: 0.4rem;
+  font-weight: bold;
+}
+
+input {
+  width: 100%;
+  padding: 0.6rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+}
+
+button.primary {
+  width: 100%;
+  padding: 0.7rem;
+  background: #0000FF;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}

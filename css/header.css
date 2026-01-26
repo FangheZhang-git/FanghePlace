@@ -1,0 +1,62 @@
+/* header layout */
+.header {
+  height: 70px;
+  border-bottom: 1px solid #ccc;
+  padding: 0 30px 0 50px;
+  margin:0 0 20px 0;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* logo */
+.logo {
+  color: #0000FF;
+  font-size: 30px;
+}
+.templogo{
+  color:#0000FF;
+}
+
+/* search area */
+.SEARCH {
+  display: flex;
+}
+
+.SEARCH input {
+  width: 550px;
+  height: 36px;
+  border: 1px solid #ccc;
+  padding-left: 10px;
+  border-radius: 0;
+}
+
+.SEARCH button {
+  width: 50px;
+  height: 36px;
+  border: 1px solid #0000FF;
+  background: #0000FF;
+  color: white;
+  cursor: pointer;
+}
+
+/* buttons */
+.login {
+  border: none;
+  background: none;
+  margin-right: 10px;
+}
+
+.signup {
+  background: #0000FF;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  cursor: pointer;
+}
+
+.BIG{
+  padding-top: 0.8rem;
+  padding-left: 1rem;
+}
