@@ -219,7 +219,7 @@ const scholarships = [
 
 
 
-    // merit + need
+    // merit (mainly) + need (partially)
 
     {
         name: "Gates Scholarship",
