@@ -21,8 +21,12 @@
 #search-button {
   font-size: 18px;
   padding: 14px 28px;
-  background: #0000FF;
+  background-color: #0000FF;
   color: white;
   border: none;
   cursor: pointer;
+}
+
+#search-button:hover{
+  background-color: #13119C;
 }
