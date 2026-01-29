@@ -1,7 +1,7 @@
 const searchInput = document.getElementById("searchInput");
-const searchBtn = document.getElementById("barSearch");
+const searchButton = document.getElementById("barSearch");
 
-searchBtn.addEventListener("click", () => {
+searchButton.addEventListener("click", () => {
   const query = searchInput.value.trim();
   if (!query) return;
 
@@ -12,6 +12,6 @@ searchBtn.addEventListener("click", () => {
 
 searchInput.addEventListener("keydown", e => {
   if (e.key === "Enter") {
-    searchBtn.click();
+    searchButton.click();
   }
 });
