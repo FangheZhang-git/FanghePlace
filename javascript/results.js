@@ -1,6 +1,6 @@
 const student = JSON.parse(localStorage.getItem("studentProfile"));
 const container = document.getElementById("scholarshipResults");
-
+let tracking = 0;
 function incomeToNumber(range) {
     if (!range) return Infinity;
     if (range.includes("Below")) return 30000;
@@ -85,4 +85,7 @@ scholarships.forEach(sch => {
 
 
     container.appendChild(card);
+    tracking+=1;
 });
+
+if(tracking === 0) container.innerHTML+= `<h3>Sorry, no matching scholarships found</h3>`;
