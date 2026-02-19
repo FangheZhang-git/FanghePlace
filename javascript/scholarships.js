@@ -348,7 +348,7 @@ const scholarships = [
         description: "Scholarship supporting diverse students pursuing creative and business-oriented fields such as fashion, design, art, and business.",
         amount: "$25,000",
         type: "Merit + Need",
-        applyUrl: "https://www.gucci.com/us/en/nst/equilibrium-changemakers?srsltid=AfmBOooxI26tw0niMfs63bxYQ45Yoa89Etz9bM2BzuhR9r_F9nJp-DBR",
+        applyUrl: "https://www.gucci.com/us/en/nst/equilibrium-changemakers",
         deadline: "February 20, 2026",
         requirements: {
             intendedMajors: [

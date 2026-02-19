@@ -41,14 +41,22 @@
   cursor: pointer;
 }
 
-/* buttons */
-.login {
+
+
+
+/* log in and sign up */
+
+#login {
   border: none;
   background: none;
   margin-right: 10px;
+  text-decoration: none;
 }
 
-.signup {
+a{
+  text-decoration:none;
+}
+#signup {
   background: #0000FF;
   color: white;
   border: none;
