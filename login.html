@@ -1,21 +1,51 @@
 <!DOCTYPE html>
 <html>
+
 <head>
   <title>Login</title>
   <link rel="stylesheet" href="css/login.css">
+  <style>
+    a {
+      text-decoration: none;
+    }
+
+    .close {
+      position: absolute;
+      transform: scale(1.15);
+      top: 20px;
+      left: 20px;
+    }
+    form{
+      position:relative;
+    }
+  </style>
 </head>
+
 <body>
 
   <form id="loginForm">
+    <a href="index.html">
+      <svg class="close" xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#1f1f1f">
+        <path d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z" />
+      </svg>
+    </a>
 
     <h2>Login</h2>
     <input type="email" class="loginGroup" id="email" placeholder="Email" required />
-    <br><br>
     <input type="password" class="loginGroup" id="password" placeholder="Password" required />
-    <br><br>
     <button type="submit">Login</button>
+    <p class="terms">
+      By continuing, you agree to ScholarMatch's
+      <a href="terms.html">Terms of Service</a> and confirm that you have read ScholarMatch's
+      <a href="privacy.html">Privacy Policy</a>.
+    </p>
+
+    <p class="signup">
+      Don't have an account? <a href="signup.html">Sign Up</a>
+    </p>
     <p id="message"></p>
   </form>
   <script src="javascript/login.js"></script>
 </body>
+
 </html>

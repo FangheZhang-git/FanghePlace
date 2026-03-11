@@ -6,20 +6,55 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="css/signup.css">
     <title>Signup</title>
+    <style>
+        a {
+            text-decoration: none;
+        }
+
+        .close {
+            position: absolute;
+            transform: scale(1.15);
+            top: 20px;
+            left: 20px;
+        }
+
+        form {
+            position: relative;
+        }
+    </style>
 </head>
 
 <body>
     <form id="signupForm">
-    <h2>Sign Up</h2>
 
-    <input type="email" class="signupGroup" id="email" placeholder="Enter email" required />
-    <br><br>
+        <a href="index.html">
+            <svg class="close" xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px"
+                fill="#1f1f1f">
+                <path
+                    d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z" />
+            </svg>
+        </a>
+        <h2>Sign Up</h2>
+        <input type="text" class="signupGroup" id="first_name" placeholder="Please Enter First Name" required>
 
-    <input type="password" class="signupGroup" id="password" placeholder="Enter password" required />
-    <br><br>
 
-    <button type="submit">Create Account</button>
-    <p id="message"></p>
+        <input type="text" class="signupGroup" id="last_name" placeholder="Please Enter Last Name" required>
+
+        <input type="email" class="signupGroup" id="email" placeholder="Please Enter Email" required />
+
+        <input type="password" class="signupGroup" id="password" placeholder="Please Enter Password" required />
+
+        <button type="submit">Create Account</button>
+        <p class="terms">
+            By continuing, you agree to ScholarMatch's
+            <a href="terms.html">Terms of Service</a> and confirm that you have read ScholarMatch's
+            <a href="privacy.html">Privacy Policy</a>.
+        </p>
+
+        <p class="login">
+            Already have an account? <a href="login.html">Log in</a>
+        </p>
+        <p id="message"></p>
     </form>
 
     <script src="javascript/signup.js"></script>

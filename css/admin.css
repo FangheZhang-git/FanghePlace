@@ -1,103 +1,224 @@
+* {
+    box-sizing: border-box;
+}
+
 body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    background: #f3f4f6;
     margin: 0;
-    padding: 40px;
+    font-family: Arial, sans-serif;
+    background: #f3f4f6;
+    color: #111827;
 }
 
-/* Main container */
+.field{
+display:flex;
+flex-direction:column;
+gap:6px;
+}
+
+
+.search-bar{
+margin-bottom:20px;
+}
+
+.search-bar input{
+padding:10px 14px;
+font-size:16px;
+border-radius:10px;
+border:1px solid #ccc;
+width:300px;
+}
+
+
+.field label{
+font-size:13px;
+font-weight:600;
+color:#374151;
+}
+
 .container {
-    max-width: 1000px;
-    margin: auto;
+    width: 94%;
+    max-width: 1800px;
+    margin: 40px auto;
 }
 
-/* Title */
 h1 {
+    font-size: 56px;
+    font-weight: 800;
     margin-bottom: 30px;
-    font-weight: 600;
 }
 
-/* Card block */
 .card {
-    background: white;
-    padding: 25px;
-    border-radius: 12px;
-    box-shadow: 0 6px 20px rgba(0,0,0,0.06);
+    background: #ffffff;
+    border-radius: 24px;
+    padding: 28px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
     margin-bottom: 30px;
 }
 
-/* Form row */
-.form-row {
-    display: flex;
-    gap: 12px;
-    margin-bottom: 15px;
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(180px, 1fr));
+    gap: 16px;
+    align-items: stretch;
 }
 
-input {
-    padding: 10px 12px;
-    border-radius: 8px;
-    border: 1px solid #d1d5db;
-    font-size: 14px;
-    flex: 1;
+.form-grid input,
+.form-grid select,
+.form-grid textarea {
+    width: 100%;
+    height: 54px;
+    padding: 0 16px;
+    border: 2px solid #d1d5db;
+    border-radius: 16px;
+    font-size: 16px;
+    background: #fff;
 }
 
-input:focus {
-    outline: none;
-    border-color: #3b82f6;
+.form-grid textarea {
+    height: 96px;
+    padding: 14px 16px;
+    resize: vertical;
 }
 
-/* Add button */
+.form-actions {
+    margin-top: 18px;
+}
+
 .add-btn {
     background: #ef4444;
     color: white;
-    padding: 10px 18px;
     border: none;
-    border-radius: 8px;
+    border-radius: 12px;
+    padding: 14px 24px;
+    font-size: 16px;
+    font-weight: 700;
     cursor: pointer;
-    font-weight: 500;
+}
+
+.action-cell{
+display:flex;
+gap:8px;
+align-items:center;
+}
+
+.edit-btn{
+background:#ffffff;
+border:1px solid #3b82f6;
+color:#3b82f6;
+padding:6px 12px;
+border-radius:6px;
+font-size:13px;
+cursor:pointer;
+}
+
+.edit-btn:hover{
+background:#3b82f6;
+color:white;
+}
+
+.delete-btn{
+background:#ef4444;
+border:none;
+color:white;
+padding:6px 12px;
+border-radius:6px;
+font-size:13px;
+cursor:pointer;
+}
+
+.delete-btn:hover{
+background:#dc2626;
 }
 
 .add-btn:hover {
     background: #dc2626;
 }
 
-/* Table */
-table {
+.table-container {
+    background: #ffffff;
+    border-radius: 24px;
+    overflow-x: auto;
+    overflow-y: auto;
+    max-height: 650px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+#schTable {
     width: 100%;
+    min-width: 1900px;
     border-collapse: collapse;
-    background: white;
-    border-radius: 12px;
-    overflow: hidden;
-    box-shadow: 0 6px 20px rgba(0,0,0,0.05);
 }
 
-th {
-    background: #111827;
+#schTable thead th {
+    position: sticky;
+    top: 0;
+    background: #07162d;
     color: white;
-    padding: 14px;
+    font-size: 15px;
+    font-weight: 700;
     text-align: left;
-    font-weight: 500;
+    padding: 18px 14px;
+    z-index: 2;
+    white-space: nowrap;
 }
 
-td {
-    padding: 14px;
-    border-bottom: 1px solid #f1f1f1;
+#schTable tbody td {
+    padding: 18px 14px;
+    border-bottom: 1px solid #e5e7eb;
+    vertical-align: top;
+    font-size: 15px;
+    line-height: 1.4;
 }
 
-tr:hover {
+#schTable tbody tr:hover {
     background: #f9fafb;
 }
 
-/* Delete button */
 .delete-btn {
     background: #ef4444;
     color: white;
-    padding: 6px 12px;
     border: none;
-    border-radius: 6px;
+    border-radius: 10px;
+    padding: 10px 16px;
+    font-size: 14px;
+    font-weight: 700;
     cursor: pointer;
 }
 
 .delete-btn:hover {
     background: #dc2626;
+}
+
+#schTable a {
+    color: #2563eb;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+#schTable a:hover {
+    text-decoration: underline;
+}
+
+@media (max-width: 1200px) {
+    .form-grid {
+        grid-template-columns: repeat(3, minmax(180px, 1fr));
+    }
+
+    h1 {
+        font-size: 42px;
+    }
+}
+
+@media (max-width: 768px) {
+    .form-grid {
+        grid-template-columns: repeat(1, minmax(180px, 1fr));
+    }
+
+    h1 {
+        font-size: 34px;
+    }
+
+    .container {
+        width: 96%;
+    }
 }

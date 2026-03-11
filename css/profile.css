@@ -1,0 +1,38 @@
+body{
+font-family: Arial;
+background-color:#f5f5f5;
+}
+
+.container{
+width:800px;
+margin:auto;
+}
+
+.section{
+background:white;
+padding:20px;
+margin-top:20px;
+border-radius:10px;
+}
+
+.smallText{
+color:gray;
+font-size:14px;
+}
+
+
+.apply-right-now {
+    display: inline-block;
+    margin-top: 12px;
+    padding: 10px 16px;
+    background-color: #2563eb;
+    color: white;
+    text-decoration: none;
+    border-radius: 6px;
+    font-weight: 600;
+    transition: background-color 0.2s ease;
+}
+
+.apply-right-now:hover {
+    background-color: #1e40af;
+}

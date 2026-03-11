@@ -7,15 +7,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const loginBtn = document.getElementById("login");
   const signupBtn = document.getElementById("signup");
-  const logoutBtn = document.getElementById("logout");
   const keyToSuccess = document.getElementById("search-button");
-
+  const MyAccount = document.getElementById("account-wrapper");
   if (token) {
     loginBtn.style.display = "none";
     signupBtn.style.display = "none";
-    logoutBtn.style.display = "inline-block";
+    MyAccount.style.display = "inline-block";
   } else {
-    logoutBtn.style.display = "none";
+    MyAccount.style.display = "none";
   }
 
   searchButton.addEventListener("click", () => {

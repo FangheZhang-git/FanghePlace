@@ -1,39 +1,252 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
+
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Panel</title>
     <link rel="stylesheet" href="css/admin.css">
 </head>
 
 <body>
-<div class="container">
 
-    <h1>Admin Scholarship Panel</h1>
+    <div class="container">
 
-    <div class="card">
-        <h3>Add Scholarship</h3>
-        <div class="form-row">
-            <input id="name" placeholder="Name">
-            <input id="provider" placeholder="Provider">
-            <input id="min_gpa" placeholder="Min GPA">
-            <button class="add-btn" onclick="addScholarship()">Add</button>
+        <h1>Admin Scholarship Panel</h1>
+
+        <div class="search-bar">
+            <input id="searchInput" placeholder="Search scholarships..." onkeyup="filterScholarships()">
         </div>
+
+        <div class="card">
+
+            <div class="form-grid">
+
+                <div class="field">
+                    <label>Scholarship Name</label>
+                    <input id="name" placeholder="Scholarship Name">
+                </div>
+
+                <div class="field">
+                    <label>Provider</label>
+                    <input id="provider" placeholder="Provider">
+                </div>
+
+                <div class="field">
+                    <label>Min Amount</label>
+                    <input id="min_amount" placeholder="Min Amount">
+                </div>
+
+                <div class="field">
+                    <label>Max Amount</label>
+                    <input id="max_amount" placeholder="Max Amount">
+                </div>
+
+                <div class="field">
+                    <label>Min GPA</label>
+                    <input id="min_gpa" placeholder="Min GPA">
+                </div>
+
+                <div class="field">
+                    <label>Min SAT</label>
+                    <input id="min_sat" placeholder="Min SAT">
+                </div>
+
+                <div class="field">
+                    <label>Min ACT</label>
+                    <input id="min_act" placeholder="Min ACT">
+                </div>
+
+                <div class="field">
+                    <label>Citizenship</label>
+                    <select id="citizenship">
+                        <option value="">Any Citizenship</option>
+                        <option>U.S. Citizen</option>
+                        <option>Permanent Resident</option>
+                        <option>International Student</option>
+                    </select>
+                </div>
+
+                <div class="field">
+                    <label>State (optional)</label>
+                    <input id="state" placeholder="State">
+                </div>
+
+                <div class="field">
+                    <label>Major</label>
+                    <select id="major">
+                        <option value="">Any Major</option>
+                        <option>Computer Science</option>
+                        <option>Engineering</option>
+                        <option>Biology</option>
+                        <option>Chemistry</option>
+                        <option>Mathematics</option>
+                        <option>Business</option>
+                        <option>Economics</option>
+                        <option>Finance</option>
+                        <option>Political Science</option>
+                        <option>Psychology</option>
+                        <option>Pre-Med / Health Sciences</option>
+                        <option>Environmental Science</option>
+                        <option>Undeclared</option>
+                        <option>Other</option>
+                    </select>
+                </div>
+
+                <div class="field">
+                    <label>Essay Requirement</label>
+                    <select id="requires_essay">
+                        <option value="0">Essay Not Required</option>
+                        <option value="1">Essay Required</option>
+                    </select>
+                </div>
+
+                <div class="field">
+                    <label>First Generation Student</label>
+                    <select id="first_gen_only">
+                        <option value="0">No</option>
+                        <option value="1">Yes</option>
+                    </select>
+                </div>
+
+                <div class="field">
+                    <label>Leadership Requirement</label>
+                    <select id="leadership">
+                        <option value="not_considered">Not Considered</option>
+                        <option value="preferred">Preferred</option>
+                        <option value="required">Required</option>
+                    </select>
+                </div>
+
+                <div class="field">
+                    <label>Award Requirement</label>
+                    <select id="award">
+                        <option value="not_considered">Not Considered</option>
+                        <option value="preferred">Preferred</option>
+                        <option value="required">Required</option>
+                    </select>
+                </div>
+
+                <div class="field">
+                    <label>Application Deadline</label>
+                    <input id="deadline" type="date">
+                </div>
+
+                <div class="field">
+                    <label>Scholarship Type</label>
+                    <select id="type">
+                        <option value="pure_merit_based">Pure Merit</option>
+                        <option value="pure_need_based">Pure Need</option>
+                        <option value="merit_plus_need">Merit + Need</option>
+                    </select>
+                </div>
+
+                <div class="field">
+                    <label>Description</label>
+                    <textarea id="description" placeholder="Scholarship description"></textarea>
+                </div>
+
+                <div class="field">
+                    <label>Minimum Income</label>
+                    <input id="min_income" placeholder="Min Income">
+                </div>
+
+                <div class="field">
+                    <label>Maximum Income</label>
+                    <input id="max_income" placeholder="Max Income">
+                </div>
+
+                <div class="field">
+                    <label>Renewable</label>
+                    <select id="renewable">
+                        <option value="0">No</option>
+                        <option value="1">Yes</option>
+                    </select>
+                </div>
+
+                <div class="field">
+                    <label>Advanced Coursework Preferred</label>
+                    <select id="advanced_coursework_preferred">
+                        <option value="0">No</option>
+                        <option value="1">Yes</option>
+                    </select>
+                </div>
+
+                <div class="field">
+                    <label>Race</label>
+                    <select id="race">
+                        <option value="">No Restriction</option>
+                        <option>White/Caucasian</option>
+                        <option>Black or African American</option>
+                        <option>Asian</option>
+                        <option>Native American / Alaska Native</option>
+                        <option>Native Hawaiian / Pacific Islander</option>
+                        <option>Hispanic / Latino</option>
+                        <option>Middle Eastern / North African (MENA)</option>
+                        <option>Two or More Races / Multiracial</option>
+                        <option>Other</option>
+                        <option>Prefer Not to Say</option>
+                    </select>
+                </div>
+
+                <div class="field">
+                    <label>Application URL</label>
+                    <input id="apply_url" placeholder="Application URL">
+                </div>
+
+            </div>
+
+            <div class="form-actions">
+                <button class="add-btn" onclick="addScholarship()">Add Scholarship</button>
+            </div>
+
+        </div>
+
+
+        <div class="table-container">
+
+            <table id="schTable">
+
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Name</th>
+                        <th>Provider</th>
+                        <th>Amount</th>
+                        <th>Min GPA</th>
+                        <th>Min SAT</th>
+                        <th>Min ACT</th>
+                        <th>Major</th>
+                        <th>Citizenship</th>
+                        <th>State</th>
+                        <th>Essay</th>
+                        <th>First Gen</th>
+                        <th>Leadership</th>
+                        <th>Award</th>
+                        <th>Min Income</th>
+                        <th>Max Income</th>
+                        <th>Renewable</th>
+                        <th>Advanced Coursework</th>
+                        <th>Race</th>
+                        <th>Deadline</th>
+                        <th>Type</th>
+                        <th>Apply</th>
+                        <th>Description</th>
+                        <th>Created At</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+
+                <tbody></tbody>
+
+            </table>
+
+        </div>
+
     </div>
 
-    <table id="schTable">
-        <thead>
-            <tr>
-                <th>ID</th>
-                <th>Name</th>
-                <th>Provider</th>
-                <th>Min GPA</th>
-                <th>Action</th>
-            </tr>
-        </thead>
-        <tbody></tbody>
-    </table>
+    <script src="admin.js"></script>
 
-</div>
-<script src="admin.js"></script>
 </body>
+
 </html>

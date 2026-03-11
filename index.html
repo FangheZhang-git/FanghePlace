@@ -18,15 +18,40 @@
     <h1 class="logo">ScholarMatch</h1>
 
     <div class="SEARCH">
-      <input id="searchInput" type="search" 
-      placeholder="Search scholarships by name" autocomplete="off">
+      <input id="searchInput" type="search" placeholder="Search scholarships by name" autocomplete="off">
       <button id="barSearch">Search</button>
     </div>
 
     <div class="buttons">
       <a href="login.html"><button id="login">Log in</button></a>
       <a href="signup.html"><button id="signup">Sign up</button></a>
-      <button id="logout" onclick="logout()" style="display: none;">Log Out</button>
+
+      <div class="account-wrapper" id="account-wrapper" style="display: none;" alt="account icon">
+        <img src="image/accont_image.svg" class="account-icon">
+        <span class="account-text">My Account</span>
+        <span class="account-arrow">▼</span>
+
+        <div id="accountDropdown" class="account-dropdown hidden">
+
+          <a href="profile.html" class="dropdown-item">
+            <img src="image/profile.svg" class="spe-icon">
+            <span>My Profile</span>
+          </a>
+
+          <button id="openLanguageModal" class="dropdown-item">
+            <img src="image/translation.svg" class="spe-icon">
+            <span>Language</span>
+          </button>
+
+          <div class="CH">
+          <button id="logout" onclick="logout()" class="dropdown-item">
+            <img src="image/logout.svg" class="spe-icon">
+            <span>Logout</span>
+          </button>
+          </div>
+
+        </div>
+      </div>
     </div>
   </header>
 
@@ -34,7 +59,8 @@
 
   <main id="main">
     <h2 id="welcome">Welcome to ScholarMatch!</h2>
-    <h3 id="mission">Our mission is to make scholarship opportunities visible, accessible, and free for every high school student</h3>
+    <h3 id="mission">Our mission is to make scholarship opportunities visible, accessible, and free for every high
+      school student</h3>
     <button id="search-button">Find Scholarships That Match You</button>
   </main>
 
@@ -43,7 +69,7 @@
     <!--All pictures from royalty-free websites, no permission needed-->
     <div class="carousel">
       <!--Pictured by Patricia Beatrix Villanueva, from Unsplash website-->
-      <img src="carousel/img1.jpg" class="slide active" alt="graduation"> 
+      <img src="carousel/img1.jpg" class="slide active" alt="graduation">
       <!--Pictured by John Guccione, from Pexels website-->
       <img src="carousel/img2.jpg" class="slide" alt="moeny easy to receive">
       <!--Pictured by David McBee, from Pexels website-->
@@ -54,8 +80,42 @@
       <img src="carousel/img5.jpg" class="slide" alt="Hard Working">
     </div>
   </div>
+
+  <div id="languageModal" class="modal hidden">
+
+    <div class="modal-backdrop"></div>
+
+    <div class="modal-box">
+
+      <div class="modal-header">
+        <h3>Edit Language</h3>
+        <button id="closeLanguageModal" class="close-btn">x</button>
+      </div>
+
+      <div class="modal-body">
+
+        <label for="languageSelect">Language</label>
+
+        <select id="languageSelect">
+          <option value="en">English</option>
+          <option value="zh">中文</option>
+          <option value="es">Español</option>
+          <option value="fr">Français</option>
+        </select>
+
+      </div>
+
+      <div class="modal-footer">
+        <button id="cancelLanguageModal" class="cancel-btn">Cancel</button>
+        <button id="saveLanguageSettings" class="save-btn">Save</button>
+      </div>
+
+    </div>
+
+  </div>
   <script src="javascript/carousel.js"></script>
   <script src="javascript/topBar.js"></script>
+  <script src="javascript/toprightToggle.js"></script>
 </body>
 
 </html>

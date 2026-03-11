@@ -35,7 +35,7 @@ h2 {
     transition: 0.3s;
 }
 
-.signupGroup:focus {
+.loginGroup:focus {
     border-color: #667eea;
     outline: none;
     box-shadow: 0 0 5px rgba(102, 126, 234, 0.5);
@@ -68,4 +68,51 @@ button:hover {
 
 #message.error {
     color: red;
+}
+
+.terms {
+    font-size: 12px;
+    color: #777;
+    text-align: center;
+    margin-top: 15px;
+}
+
+.terms a {
+    color: #444;
+    text-decoration: underline;
+}
+
+.signup {
+    text-align: center;
+    margin-top: 15px;
+    font-size: 14px;
+}
+
+.signup a {
+    color: #0000FF;
+    font-weight: bold;
+    text-decoration: none;
+}
+
+.loginGroup {
+    width: 100%;
+    padding: 10px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+    font-size: 14px;
+    transition: 0.3s;
+    margin-bottom: 15px;
+}
+
+button {
+    width: 100%;
+    padding: 10px;
+    border-radius: 5px;
+    border: none;
+    background-color: #0000FF;
+    color: white;
+    font-size: 16px;
+    cursor: pointer;
+    transition: 0.3s;
+    margin-top: 10px;
 }

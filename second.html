@@ -175,7 +175,7 @@
 
         <div class="info" id="DEDetails" style="display: none;">
           <label >Dual Enrollment Coursework Details</label>
-          <input type="number" id="honorsCount" min="0" placeholder="Number of Dual Enrollment classes taken">
+          <input type="number" id="dualCount" min="0" placeholder="Number of Dual Enrollment classes taken">
         </div>
 
 
@@ -207,11 +207,11 @@
           <label for="income">Household Income Range</label>
           <select id="income">
             <option value="">Select</option>
-            <option>Below $30,000</option>
-            <option>$30,000 - $60,000</option>
-            <option>$60,000 - $100,000</option>
-            <option>$100,000 - $150,000</option>
-            <option>Above $150,000</option>
+            <option value="30000">Below $30,000</option>
+            <option value="60000">$30,000 - $60,000</option>
+            <option value="100000">$60,000 - $100,000</option>
+            <option value="150000">$100,000 - $150,000</option>
+            <option value="200000">Above $150,000</option>
           </select>
         </div>
 

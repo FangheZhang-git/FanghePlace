@@ -61,40 +61,157 @@ function requireAdmin(req, res, next) {
 }
 
 function calculateScore(profile, sch) {
-
-    if (sch.min_gpa && profile.gpa < sch.min_gpa) return null;
-    if (sch.min_sat && profile.sat < sch.min_sat) return null;
-    if (sch.min_act && profile.act < sch.min_act) return null;
-
-    if (sch.leadership_required && !profile.leadership) return null;
-    if (sch.requires_essay && !profile.willing_essay) return null;
-
     let score = 0;
 
-    // GPA weight
+    // ---------- HARD FILTERS (must satisfy) ----------
+
+    if (sch.min_gpa && profile.gpa !== null && profile.gpa < sch.min_gpa) {
+        return null;
+    }
+
+    if (sch.min_sat && profile.sat !== null && profile.sat < sch.min_sat) {
+        return null;
+    }
+
+    if (sch.min_act && profile.act !== null && profile.act < sch.min_act) {
+        return null;
+    }
+
+    // citizenship exact match if scholarship requires one
+    if (sch.citizenship && profile.citizenship && sch.citizenship !== profile.citizenship) {
+        return null;
+    }
+
+    // state match if scholarship is state-specific
+    if (sch.state && profile.residency && sch.state !== profile.residency) {
+        return null;
+    }
+
+    // major match if scholarship specifies a major
+    if (sch.major && profile.major && sch.major !== profile.major) {
+        return null;
+    }
+
+    // essay required
+    if (sch.requires_essay === 1 && profile.willing_essay !== 1) {
+        return null;
+    }
+
+    // first-generation required
+    if (sch.first_gen_only === 1 && profile.first_gen !== 1) {
+        return null;
+    }
+
+    // leadership required
+    if (sch.leadership === "required" && profile.leadership !== 1) {
+        return null;
+    }
+
+    // award required
+    if (sch.award === "required" && profile.award !== 1) {
+        return null;
+    }
+
+    // race restriction
+    if (sch.race && sch.race !== "any" && profile.race && sch.race !== profile.race) {
+        return null;
+    }
+
+    // max income
+    if (sch.max_income && profile.income !== null && profile.income > sch.max_income) {
+        return null;
+    }
+
+    // min income
+    if (sch.min_income && profile.income !== null && profile.income < sch.min_income) {
+        return null;
+    }
+
+    // ---------- SCORING ----------
+
     if (profile.gpa) {
         score += profile.gpa * 10;
     }
 
-    // SAT weight
     if (profile.sat) {
         score += profile.sat / 100;
     }
 
-    // Leadership BONUS
-    if (profile.leadership) {
+    if (profile.act) {
+        score += profile.act / 2;
+    }
+
+    // AP / honors / advanced coursework
+    if (profile.has_ap === 1) {
+        score += 5;
+    }
+
+    if (profile.ap_high_scores) {
+        score += profile.ap_high_scores * 2;
+    }
+
+    if (profile.has_honors === 1) {
+        score += 3;
+    }
+
+    if (sch.advanced_coursework_preferred === 1) {
+        if (profile.has_ap === 1 || profile.has_honors === 1 || profile.has_dual_enrollment === 1) {
+            score += 8;
+        }
+    }
+
+    // leadership preferred
+    if (sch.leadership === "preferred" && profile.leadership === 1) {
         score += 10;
     }
 
-    // Advanced coursework BONUS
-    if (sch.advanced_coursework_preferred && profile.has_ap) {
+    // award preferred
+    if (sch.award === "preferred" && profile.award === 1) {
+        score += 10;
+    }
+
+    // first-gen bonus
+    if (profile.first_gen === 1) {
         score += 5;
+    }
+
+    // merit / need type bonus
+    if (sch.type === "pure_merit_based") {
+        if (profile.gpa >= 3.7) score += 8;
+        if (profile.sat >= 1450 || profile.act >= 32) score += 8;
+    }
+
+    if (sch.type === "pure_need_based") {
+        if (profile.income !== null && profile.income <= 60000) score += 12;
+    }
+
+    if (sch.type === "merit_plus_need") {
+        if (profile.income !== null && profile.income <= 80000) score += 8;
+        if (profile.gpa >= 3.4) score += 6;
     }
 
     return score;
 }
 
+app.get("/search", async (req, res) => {
+    try {
+        const query = req.query.query;
 
+        if (!query || query.trim() === "") {
+            return res.json([]);
+        }
+
+        const [rows] = await db.query(
+            "SELECT * FROM scholarships WHERE name LIKE ?",
+            [`%${query}%`]
+        );
+
+        res.json(rows);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: "Search error" });
+    }
+});
 
 //easy test route
 app.get("/", (req, res) => {
@@ -112,9 +229,8 @@ app.get('/protected', authenticateToken, (req, res) => {
 
 app.post('/signup', async (req, res) => {
     try {
-        const { email, password } = req.body;
+        const { first_name, last_name, email, password } = req.body;
 
-        // 🔎 Check if email already exists
         const [existing] = await db.query(
             "SELECT id FROM users WHERE email = ?",
             [email]
@@ -126,12 +242,24 @@ app.post('/signup', async (req, res) => {
 
         const hashedPassword = await bcrypt.hash(password, 10);
 
-        await db.query(
-            "INSERT INTO users (email, password) VALUES (?, ?)",
-            [email, hashedPassword]
+        const [result] = await db.query(
+            "INSERT INTO users (first_name, last_name, email, password) VALUES (?, ?, ?, ?)",
+            [first_name, last_name, email, hashedPassword]
         );
 
-        res.json({ message: "User created successfully" });
+        const userId = result.insertId;
+        const token = jwt.sign(
+            { id: userId, email: email },
+            JWT_SECRET,
+            { expiresIn: "1h" }
+        );
+
+        res.status(201).json({
+            message: "User created successfully",
+            token: token
+        });
+
+
 
     } catch (err) {
         console.error(err);
@@ -333,43 +461,64 @@ app.post('/admin/scholarships', authenticateToken, requireAdmin, async (req, res
         min_gpa,
         min_sat,
         min_act,
-        advanced_coursework_preferred
+        citizenship,
+        state,
+        major,
+        requires_essay,
+        first_gen_only,
+        leadership,
+        min_income,
+        max_income,
+        renewable,
+        description,
+        apply_url,
+        deadline,
+        advanced_coursework_preferred,
+        award,
+        race,
+        type
     } = req.body;
 
     await db.query(
         `INSERT INTO scholarships
-        (name, provider, min_amount, max_amount, min_gpa, min_sat, min_act, advanced_coursework_preferred)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-        [name, provider, min_amount, max_amount, min_gpa, min_sat, min_act, advanced_coursework_preferred]
+    (
+        name, provider, min_amount, max_amount, min_gpa, min_sat, min_act,
+        citizenship, state, major, requires_essay, first_gen_only, leadership,
+        min_income, max_income, renewable, description, apply_url, deadline,
+        advanced_coursework_preferred, award, race, type
+    )
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+            name, provider, min_amount, max_amount, min_gpa, min_sat, min_act,
+            citizenship, state, major, requires_essay, first_gen_only, leadership,
+            min_income, max_income, renewable, description, apply_url, deadline,
+            advanced_coursework_preferred, award, race, type
+        ]
     );
 
     res.json({ message: "Scholarship created" });
 });
 
 // Edit Scholarships
-
-app.put('/admin/scholarships/:id', authenticateToken, requireAdmin, async (req, res) => {
+app.get('/admin/scholarships/:id', authenticateToken, requireAdmin, async (req, res) => {
 
     const id = req.params.id;
 
-    await db.query(
-        `UPDATE scholarships
-        SET name = ?, provider = ?, min_gpa = ?, min_sat = ?, min_act = ?
-        WHERE id = ?`,
-        [
-            req.body.name,
-            req.body.provider,
-            req.body.min_gpa,
-            req.body.min_sat,
-            req.body.min_act,
-            id
-        ]
+    const [rows] = await db.query(
+        "SELECT * FROM scholarships WHERE id = ?",
+        [id]
     );
 
-    res.json({ message: "Scholarship updated" });
+    if (rows.length === 0) {
+        return res.status(404).json({ message: "Scholarship not found" });
+    }
+
+    res.json(rows[0]);
 });
 
-// delete scholarships
+
+
+
 app.delete('/admin/scholarships/:id', authenticateToken, requireAdmin, async (req, res) => {
 
     const id = req.params.id;
@@ -379,6 +528,250 @@ app.delete('/admin/scholarships/:id', authenticateToken, requireAdmin, async (re
     res.json({ message: "Scholarship deleted" });
 });
 
+
+//PUT route for editing.
+app.put('/admin/scholarships/:id', authenticateToken, requireAdmin, async (req, res) => {
+
+    const id = req.params.id;
+
+    const {
+        name,
+        provider,
+        min_amount,
+        max_amount,
+        min_gpa,
+        min_sat,
+        min_act,
+        citizenship,
+        state,
+        major,
+        requires_essay,
+        first_gen_only,
+        leadership,
+        min_income,
+        max_income,
+        renewable,
+        description,
+        apply_url,
+        deadline,
+        advanced_coursework_preferred,
+        award,
+        race,
+        type
+    } = req.body;
+
+    await db.query(
+        `UPDATE scholarships
+     SET
+        name=?,
+        provider=?,
+        min_amount=?,
+        max_amount=?,
+        min_gpa=?,
+        min_sat=?,
+        min_act=?,
+        citizenship=?,
+        state=?,
+        major=?,
+        requires_essay=?,
+        first_gen_only=?,
+        leadership=?,
+        min_income=?,
+        max_income=?,
+        renewable=?,
+        description=?,
+        apply_url=?,
+        deadline=?,
+        advanced_coursework_preferred=?,
+        award=?,
+        race=?,
+        type=?
+     WHERE id=?`,
+        [
+            name,
+            provider,
+            min_amount,
+            max_amount,
+            min_gpa,
+            min_sat,
+            min_act,
+            citizenship,
+            state,
+            major,
+            requires_essay,
+            first_gen_only,
+            leadership,
+            min_income,
+            max_income,
+            renewable,
+            description,
+            apply_url,
+            deadline,
+            advanced_coursework_preferred,
+            award,
+            race,
+            type,
+            id
+        ]);
+
+    const [updated] = await db.query(
+        "SELECT * FROM scholarships WHERE id = ?",
+        [id]
+    );
+
+    res.json(updated[0]);
+
+});
+
+
+
+
+app.get("/profile", authenticateToken, async (req, res) => {
+
+    const userId = req.user.id;
+
+    const sql = `
+  SELECT
+    u.first_name,
+    u.last_name,
+    u.email,
+    up.*
+  FROM users u
+  LEFT JOIN user_profiles up
+  ON u.id = up.user_id
+  WHERE u.id = ?
+  ORDER BY up.created_at DESC
+  LIMIT 1
+  `;
+
+    const [rows] = await db.query(sql, [userId]);
+
+    res.json(rows[0]);
+
+});
+
+
+
+//three APIs for saved scholarships
+
+// POST   /toggle-save
+// GET    /saved-scholarships
+// GET    /saved-ids
+app.post("/toggle-save", authenticateToken, async (req, res) => {
+
+    const userId = req.user.id
+    const { scholarship_id } = req.body
+
+    const [rows] = await db.query(
+        `SELECT * FROM saved_scholarships
+         WHERE user_id=? AND scholarship_id=?`,
+        [userId, scholarship_id]
+    )
+
+    if (rows.length) {
+
+        await db.query(
+            `DELETE FROM saved_scholarships
+             WHERE user_id=? AND scholarship_id=?`,
+            [userId, scholarship_id]
+        )
+
+        res.json({ saved: false })
+
+    } else {
+
+        await db.query(
+            `INSERT INTO saved_scholarships
+             (user_id, scholarship_id)
+             VALUES (?,?)`,
+            [userId, scholarship_id]
+        )
+
+        res.json({ saved: true })
+    }
+
+})
+
+app.get("/saved-ids", authenticateToken, async (req,res)=>{
+
+    const userId = req.user.id
+
+    const [rows] = await db.query(
+        `SELECT scholarship_id
+         FROM saved_scholarships
+         WHERE user_id=?`,
+        [userId]
+    )
+
+    res.json(rows)
+
+})
+
+app.get("/saved-scholarships", authenticateToken, async (req,res)=>{
+
+    const userId = req.user.id
+
+    const [rows] = await db.query(`
+        SELECT s.*
+        FROM scholarships s
+        JOIN saved_scholarships ss
+        ON s.id = ss.scholarship_id
+        WHERE ss.user_id=?
+    `,[userId])
+
+    res.json(rows)
+
+})
+
+
+//comment function (POST Comment)
+
+app.post("/scholarships/:id/comment", async (req, res) => {
+    try {
+
+        const scholarshipId = req.params.id;
+        const { user_id, comment } = req.body;
+
+        await db.query(
+            `INSERT INTO scholarship_comments 
+            (scholarship_id, user_id, comment)
+            VALUES (?, ?, ?)`,
+            [scholarshipId, user_id, comment]
+        );
+
+        res.json({ message: "Comment added" });
+
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+
+//comment function (GET Comment)
+
+app.get("/scholarships/:id/comments", async (req, res) => {
+    try {
+
+        const scholarshipId = req.params.id;
+
+        const [comments] = await db.query(
+            `SELECT 
+                scholarship_comments.comment,
+                scholarship_comments.created_at,
+                users.name
+            FROM scholarship_comments
+            JOIN users ON scholarship_comments.user_id = users.id
+            WHERE scholarship_comments.scholarship_id = ?
+            ORDER BY created_at DESC`,
+            [scholarshipId]
+        );
+
+        res.json(comments);
+
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
 
 
 
