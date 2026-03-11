@@ -30,6 +30,11 @@
   border: 1px solid #ccc;
   padding-left: 10px;
   border-radius: 0;
+  outline: none;
+}
+
+#searchInput:focus::placeholder {
+  opacity: 0;
 }
 
 .SEARCH button {
@@ -62,6 +67,17 @@ a{
   border: none;
   padding: 6px 12px;
   cursor: pointer;
+}
+
+#logout {
+  background: #ef4444;
+  color: black;
+  font-weight: 600;
+  border: none;
+  padding: 10px 12px;
+  cursor: pointer;
+  border-radius: 8px;
+
 }
 
 .BIG{

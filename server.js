@@ -4,7 +4,7 @@ const mysql = require("mysql2/promise");
 const cors = require("cors");
 const jwt = require('jsonwebtoken');
 
-const JWT_SECRET = "super_secret_key_change_this";
+const JWT_SECRET = process.env.JWT_SECRET;
 
 const app = express();
 const bcrypt = require('bcrypt');
@@ -48,9 +48,16 @@ function authenticateToken(req, res, next) {
             return res.status(403).json({ message: "Invalid or expired token." });
         }
 
-        req.user = user;  
+        req.user = user;
         next();
     });
+}
+
+function requireAdmin(req, res, next) {
+    if (!req.user.is_admin) {
+        return res.status(403).json({ message: "Admin access required" });
+    }
+    next();
 }
 
 function calculateScore(profile, sch) {
@@ -107,10 +114,22 @@ app.post('/signup', async (req, res) => {
     try {
         const { email, password } = req.body;
 
+        // 🔎 Check if email already exists
+        const [existing] = await db.query(
+            "SELECT id FROM users WHERE email = ?",
+            [email]
+        );
+
+        if (existing.length > 0) {
+            return res.status(400).json({ message: "Email already registered" });
+        }
+
         const hashedPassword = await bcrypt.hash(password, 10);
 
-        const sql = "INSERT INTO users (email, password) VALUES (?, ?)";
-        await db.query(sql, [email, hashedPassword]);
+        await db.query(
+            "INSERT INTO users (email, password) VALUES (?, ?)",
+            [email, hashedPassword]
+        );
 
         res.json({ message: "User created successfully" });
 
@@ -144,7 +163,11 @@ app.post('/login', async (req, res) => {
         }
 
         const token = jwt.sign(
-            { id: user.id, email: user.email },
+            {
+                id: user.id,
+                email: user.email,
+                is_admin: user.is_admin
+            },
             JWT_SECRET,
             { expiresIn: "1h" }
         );
@@ -287,6 +310,74 @@ app.get("/match", authenticateToken, async (req, res) => {
     }
 });
 
+
+//Phase 3 — Create Admin Routes (CRUD)
+
+//We will build clean REST-style admin routes.
+
+
+//View all scholarships (admin only)
+app.get('/admin/scholarships', authenticateToken, requireAdmin, async (req, res) => {
+    const [rows] = await db.query("SELECT * FROM scholarships");
+    res.json(rows);
+});
+
+// add scholarships
+app.post('/admin/scholarships', authenticateToken, requireAdmin, async (req, res) => {
+
+    const {
+        name,
+        provider,
+        min_amount,
+        max_amount,
+        min_gpa,
+        min_sat,
+        min_act,
+        advanced_coursework_preferred
+    } = req.body;
+
+    await db.query(
+        `INSERT INTO scholarships
+        (name, provider, min_amount, max_amount, min_gpa, min_sat, min_act, advanced_coursework_preferred)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        [name, provider, min_amount, max_amount, min_gpa, min_sat, min_act, advanced_coursework_preferred]
+    );
+
+    res.json({ message: "Scholarship created" });
+});
+
+// Edit Scholarships
+
+app.put('/admin/scholarships/:id', authenticateToken, requireAdmin, async (req, res) => {
+
+    const id = req.params.id;
+
+    await db.query(
+        `UPDATE scholarships
+        SET name = ?, provider = ?, min_gpa = ?, min_sat = ?, min_act = ?
+        WHERE id = ?`,
+        [
+            req.body.name,
+            req.body.provider,
+            req.body.min_gpa,
+            req.body.min_sat,
+            req.body.min_act,
+            id
+        ]
+    );
+
+    res.json({ message: "Scholarship updated" });
+});
+
+// delete scholarships
+app.delete('/admin/scholarships/:id', authenticateToken, requireAdmin, async (req, res) => {
+
+    const id = req.params.id;
+
+    await db.query("DELETE FROM scholarships WHERE id = ?", [id]);
+
+    res.json({ message: "Scholarship deleted" });
+});
 
 
 

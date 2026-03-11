@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Admin Panel</title>
+    <link rel="stylesheet" href="css/admin.css">
+</head>
+
+<body>
+<div class="container">
+
+    <h1>Admin Scholarship Panel</h1>
+
+    <div class="card">
+        <h3>Add Scholarship</h3>
+        <div class="form-row">
+            <input id="name" placeholder="Name">
+            <input id="provider" placeholder="Provider">
+            <input id="min_gpa" placeholder="Min GPA">
+            <button class="add-btn" onclick="addScholarship()">Add</button>
+        </div>
+    </div>
+
+    <table id="schTable">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Provider</th>
+                <th>Min GPA</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+
+</div>
+<script src="admin.js"></script>
+</body>
+</html>

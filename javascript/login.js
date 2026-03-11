@@ -18,14 +18,25 @@ form.addEventListener("submit", async (e) => {
     const data = await response.json();
 
     const messageElement = document.getElementById("message");
-        if (response.ok) {
+    if (response.ok) {
         localStorage.setItem("token", data.token);
+
+        // Decode JWT payload
+        const payload = JSON.parse(
+            atob(data.token.split(".")[1])
+        );
+
         messageElement.innerText = "Login successful!";
         messageElement.style.color = "green";
 
         setTimeout(() => {
-            window.location.href = "profile.html";
-        }, 1000); // wait 1 second before redirect
+            if (payload.is_admin) {
+                window.location.href = "admin.html";
+            } else {
+                window.location.href = "index.html";
+            }
+        }, 800);
+
     } else {
         messageElement.innerText = data.message;
         messageElement.style.color = "red";
