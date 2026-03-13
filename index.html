@@ -5,6 +5,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ScholarMatch</title>
+  <link rel="icon" href="image/ScholarMatch.png">
   <link rel="stylesheet" href="css/header.css">
   <link rel="stylesheet" href="css/carousel.css">
   <link rel="stylesheet" href="styles.css">
@@ -38,16 +39,21 @@
             <span>My Profile</span>
           </a>
 
+          <a href="submit-scholarship.html" class="dropdown-item">
+            <img src="image/upload.svg" class="spe-icon">
+            <span>Upload a Scholarship</span>
+          </a>
+
           <button id="openLanguageModal" class="dropdown-item">
             <img src="image/translation.svg" class="spe-icon">
             <span>Language</span>
           </button>
 
           <div class="CH">
-          <button id="logout" onclick="logout()" class="dropdown-item">
-            <img src="image/logout.svg" class="spe-icon">
-            <span>Logout</span>
-          </button>
+            <button id="logout" onclick="logout()" class="dropdown-item">
+              <img src="image/logout.svg" class="spe-icon">
+              <span>Logout</span>
+            </button>
           </div>
 
         </div>
@@ -89,7 +95,7 @@
 
       <div class="modal-header">
         <h3>Edit Language</h3>
-        <button id="closeLanguageModal" class="close-btn">x</button>
+        <button id="closeLanguageModal" class="close-btn">X</button>
       </div>
 
       <div class="modal-body">
@@ -98,7 +104,7 @@
 
         <select id="languageSelect">
           <option value="en">English</option>
-          <option value="zh">中文</option>
+          <option value="zh-CN">中文</option>
           <option value="es">Español</option>
           <option value="fr">Français</option>
         </select>
@@ -106,13 +112,17 @@
       </div>
 
       <div class="modal-footer">
-        <button id="cancelLanguageModal" class="cancel-btn">Cancel</button>
-        <button id="saveLanguageSettings" class="save-btn">Save</button>
+        <button id="saveLanguageSettings" class="save-btn" onclick="saveLanguage()">Save</button>
       </div>
 
     </div>
 
   </div>
+  <div id="google_translate_element" style="display:none;"></div>
+
+  <script src="javascript/translate.js"></script>
+
+  <script src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
   <script src="javascript/carousel.js"></script>
   <script src="javascript/topBar.js"></script>
   <script src="javascript/toprightToggle.js"></script>

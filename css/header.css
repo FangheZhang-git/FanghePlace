@@ -30,7 +30,7 @@
 }
 
 .SEARCH input {
-  width: 550px;
+  width: min(550px, 60vw);
   height: 36px;
   border: 1px solid #ccc;
   padding-left: 10px;
@@ -236,26 +236,26 @@ a {
 }
 
 
-.dropdown-item{
-  display:flex;
-  align-items:center;
-  gap:10px;
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
 
-  width:100%;
-  padding:14px 16px;
+  width: 100%;
+  padding: 14px 16px;
 
-  border:none;
-  background:none;
-  text-align:left;
-  font-size:16px;
+  border: none;
+  background: none;
+  text-align: left;
+  font-size: 16px;
 }
 
-.spe-icon{
-  width:22px;
-  height:22px;
-  flex-shrink:0;
+.spe-icon {
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
 }
 
-.CH{
+.CH {
   margin-left: 6px;
 }

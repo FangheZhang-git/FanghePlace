@@ -4,7 +4,17 @@
   box-sizing: border-box;
 }
 
+/* Hide Google Translate banner */
+.goog-te-banner-frame.skiptranslate {
+    display: none !important;
+}
+
+.skiptranslate iframe {
+    display: none !important;
+} 
+
 body {
+  top: 0 !important;
   font-family: Arial, sans-serif;
   background: white;
   color: black;
@@ -45,3 +55,4 @@ a{
 #results-title{
   padding: 0 0 15px 0;
 }
+

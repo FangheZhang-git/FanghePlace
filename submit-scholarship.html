@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Submit Scholarship</title>
+
+    <link rel="stylesheet" href="css/header.css">
+    <link rel="stylesheet" href="css/submitScholarship.css">
+    <link rel="stylesheet" href="css/admin.css">
+</head>
+
+<body>
+
+    <header class="header">
+        <a href="index.html">
+            <h1 class="logo">ScholarMatch</h1>
+        </a>
+    </header>
+
+    <main class="container">
+
+        <h2 style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;" margin-bottom="60px;">Submit a
+            Scholarship</h2>
+        <p style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
+            Share scholarships to help students in the ScholarMatch community discover new opportunities.
+            Earn 10 points for every scholarship you submit that gets approved.
+            Your submission will be reviewed before appearing publicly.
+        </p>
+
+        <form id="scholarshipForm">
+            <div class="card">
+
+                <div class="form-grid">
+
+                    <div class="field">
+                        <label>Scholarship Name</label>
+                        <input id="name" placeholder="Scholarship Name" required>
+                    </div>
+
+                    <div class="field">
+                        <label>Provider</label>
+                        <input id="provider" placeholder="Provider" required>
+                    </div>
+
+                    <div class="field">
+                        <label>Min Amount</label>
+                        <input id="min_amount" placeholder="Min Amount" required>
+                    </div>
+
+                    <div class="field">
+                        <label>Max Amount</label>
+                        <input id="max_amount" placeholder="Max Amount" required>
+                    </div>
+
+                    <div class="field">
+                        <label>Min GPA</label>
+                        <input id="min_gpa" placeholder="Min GPA">
+                    </div>
+
+                    <div class="field">
+                        <label>Min SAT</label>
+                        <input id="min_sat" placeholder="Min SAT">
+                    </div>
+
+                    <div class="field">
+                        <label>Min ACT</label>
+                        <input id="min_act" placeholder="Min ACT">
+                    </div>
+
+                    <div class="field">
+                        <label>Citizenship</label>
+                        <select id="citizenship" required>
+                            <option value="any">Any Citizenship</option>
+                            <option>U.S. Citizen</option>
+                            <option>Permanent Resident</option>
+                            <option>International Student</option>
+                        </select>
+                    </div>
+
+                    <div class="field">
+                        <label for="residency">State of Residency</label>
+                        <select id="state">
+                            <option value="">Select</option>
+                            <option value="AL">Alabama</option>
+                            <option value="CA">California</option>
+                            <option value="FL">Florida</option>
+                            <option value="GA">Georgia</option>
+                            <option value="MA">Massachusetts</option>
+                            <option value="NY">New York</option>
+                            <option value="TX">Texas</option>
+                            <option value="WA">Washington</option>
+                            <option value="NA">NA</option>
+
+                        </select>
+                    </div>
+
+                    <div class="field">
+                        <label>Major</label>
+                        <select id="major">
+                            <option value="">Any Major</option>
+                            <option>Computer Science</option>
+                            <option>Engineering</option>
+                            <option>Biology</option>
+                            <option>Chemistry</option>
+                            <option>Mathematics</option>
+                            <option>Business</option>
+                            <option>Economics</option>
+                            <option>Finance</option>
+                            <option>Political Science</option>
+                            <option>Psychology</option>
+                            <option>Pre-Med / Health Sciences</option>
+                            <option>Environmental Science</option>
+                            <option>Undeclared</option>
+                            <option>Other</option>
+                        </select>
+                    </div>
+
+                    <div class="field">
+                        <label>Essay Requirement</label>
+                        <select id="requires_essay" required>
+                            <option value="0">Essay Not Required</option>
+                            <option value="1">Essay Required</option>
+                        </select>
+                    </div>
+
+                    <div class="field">
+                        <label>First Generation Student</label>
+                        <select id="first_gen_only">
+                            <option value="0">No</option>
+                            <option value="1">Yes</option>
+                        </select>
+                    </div>
+
+                    <div class="field">
+                        <label>Leadership Requirement</label>
+                        <select id="leadership">
+                            <option value="not_considered">Not Considered</option>
+                            <option value="preferred">Preferred</option>
+                            <option value="required">Required</option>
+                        </select>
+                    </div>
+
+                    <div class="field">
+                        <label>Award Requirement</label>
+                        <select id="award">
+                            <option value="not_considered">Not Considered</option>
+                            <option value="preferred">Preferred</option>
+                            <option value="required">Required</option>
+                        </select>
+                    </div>
+
+                    <div class="field">
+                        <label>Application Deadline</label>
+                        <input id="deadline" type="date">
+                    </div>
+
+                    <div class="field">
+                        <label>Scholarship Type</label>
+                        <select id="type" required>
+                            <option value="pure_merit_based">Pure Merit</option>
+                            <option value="pure_need_based">Pure Need</option>
+                            <option value="merit_plus_need">Merit + Need</option>
+                        </select>
+                    </div>
+
+                    <div class="field">
+                        <label>Description</label>
+                        <textarea id="description" placeholder="Scholarship description" required></textarea>
+                    </div>
+
+                    <div class="field">
+                        <label>Minimum Income</label>
+                        <input id="min_income" placeholder="Min Income">
+                    </div>
+
+                    <div class="field">
+                        <label>Maximum Income</label>
+                        <input id="max_income" placeholder="Max Income">
+                    </div>
+
+                    <div class="field">
+                        <label>Renewable</label>
+                        <select id="renewable">
+                            <option value="0">No</option>
+                            <option value="1">Yes</option>
+                        </select>
+                    </div>
+
+                    <div class="field">
+                        <label>Advanced Coursework Preferred</label>
+                        <select id="advanced_coursework_preferred">
+                            <option value="0">No</option>
+                            <option value="1">Yes</option>
+                        </select>
+                    </div>
+
+                    <div class="field">
+                        <label>Race</label>
+                        <select id="race">
+                            <option value="">No Restriction</option>
+                            <option>White/Caucasian</option>
+                            <option>Black or African American</option>
+                            <option>Asian</option>
+                            <option>Native American / Alaska Native</option>
+                            <option>Native Hawaiian / Pacific Islander</option>
+                            <option>Hispanic / Latino</option>
+                            <option>Middle Eastern / North African (MENA)</option>
+                            <option>Two or More Races / Multiracial</option>
+                            <option>Other</option>
+                            <option>Prefer Not to Say</option>
+                        </select>
+                    </div>
+
+                    <div class="field">
+                        <label>Application URL</label>
+                        <input id="apply_url" placeholder="Application URL" type="url" required>
+                    </div>
+
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="add-btn">Add Scholarship</button>
+                </div>
+
+            </div>
+        </form>
+
+    </main>
+
+    <p id="message"></p>
+
+    <h2 id="view">My Scholarship Submissions</h2>
+
+    <div id="mySubmissions"></div>
+
+    <script src="javascript/mySubmission.js"></script>
+
+    <script src="javascript/submitScholarship.js"></script>
+    <script src="javascript/checkToken.js"></script>
+
+</body>
+
+</html>

@@ -1,19 +1,21 @@
-.background{
+.background {
     padding: 20px;
     display: flex;
     justify-content: center;
 }
-.carousel{
+
+.carousel {
 
     box-sizing: border-box;
     position: relative;
     overflow: hidden;
+    width: 100%;
     width: 1000px;
     height: 280px;
     border-radius: 10px;
 }
 
-.slide{
+.slide {
     position: absolute;
     inset: 0;
     width: 100%;
@@ -24,6 +26,29 @@
     transition: opacity 1s ease-in-out;
 }
 
-.slide.active{
+.slide.active {
     opacity: 1;
+}
+
+
+
+@media (max-width: 900px) {
+
+    .header {
+        flex-wrap: wrap;
+        gap: 20px;
+    }
+
+    .SEARCH input {
+        width: 100%;
+    }
+
+    #welcome {
+        font-size: 32px;
+    }
+
+    #mission {
+        font-size: 16px;
+    }
+
 }

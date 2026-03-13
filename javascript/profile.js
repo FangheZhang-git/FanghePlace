@@ -54,65 +54,8 @@ async function loadDashboard() {
       `;
     }
 
-    // // 2. load saved scholarships
-    // const savedResponse = await fetch("http://localhost:3001/saved-scholarships", {
-    //   headers: {
-    //     "Authorization": "Bearer " + token
-    //   }
-    // });
+    
 
-    // const savedData = await savedResponse.json();
-
-    // if (!savedResponse.ok) {
-    //   savedScholarshipsContainer.innerHTML = `<p>${savedData.message || "Failed to load saved scholarships."}</p>`;
-    // } else if (savedData.length === 0) {
-    //   savedScholarshipsContainer.innerHTML = `<p>You have not saved any scholarships yet.</p>`;
-    // } else {
-    //   savedScholarshipsContainer.innerHTML = "";
-
-    //   savedData.forEach(sch => {
-    //     const card = document.createElement("div");
-    //     card.className = "dashboard-card";
-
-    //     card.innerHTML = `
-    //       <h3>${sch.name}</h3>
-    //       <p><strong>Award:</strong> ${sch.award || "Not specified"}</p>
-    //       <p><strong>Deadline:</strong> ${sch.deadline || "Not specified"}</p>
-    //     `;
-
-    //     savedScholarshipsContainer.appendChild(card);
-    //   });
-    // }
-
-    // // 3. load comments
-    // const commentsResponse = await fetch("http://localhost:3001/my-comments", {
-    //   headers: {
-    //     "Authorization": "Bearer " + token
-    //   }
-    // });
-
-    // const commentsData = await commentsResponse.json();
-
-    // if (!commentsResponse.ok) {
-    //   commentsContainer.innerHTML = `<p>${commentsData.message || "Failed to load comments."}</p>`;
-    // } else if (commentsData.length === 0) {
-    //   commentsContainer.innerHTML = `<p>You have not posted any comments yet.</p>`;
-    // } else {
-    //   commentsContainer.innerHTML = "";
-
-    //   commentsData.forEach(comment => {
-    //     const card = document.createElement("div");
-    //     card.className = "dashboard-card";
-
-    //     card.innerHTML = `
-    //       <h3>${comment.scholarship_name || "Scholarship"}</h3>
-    //       <p>${comment.comment_text || ""}</p>
-    //       <p><strong>Posted:</strong> ${comment.created_at || "Unknown date"}</p>
-    //     `;
-
-    //     commentsContainer.appendChild(card);
-    //   });
-    // }
 
   } catch (error) {
     console.error("Dashboard loading error:", error);
@@ -122,4 +65,113 @@ async function loadDashboard() {
   }
 }
 
+async function loadUserComments(){
+
+    const userId = localStorage.getItem("user_id");
+
+    const res = await fetch(`http://localhost:3001/users/${userId}/comments`);
+    const comments = await res.json();
+
+    const container = document.getElementById("userComments");
+
+    container.innerHTML = "";
+
+    if(comments.length === 0){
+        container.innerHTML = "<p>No comments yet</p>";
+        return;
+    }
+
+    comments.forEach(c => {
+
+        const date = new Date(c.created_at).toLocaleDateString();
+
+        const div = document.createElement("div");
+
+        div.className = "user-comment-card";
+
+        div.innerHTML = `
+            <div class="comment-scholarship">
+                ${c.scholarship_name}
+            </div>
+
+            <div class="comment-text">
+                ${c.comment}
+            </div>
+
+            <div class="comment-date">
+                ${date}
+            </div>
+        `;
+
+        container.appendChild(div);
+
+    });
+
+}
+
+
+
+async function loadMySubmissions(){
+
+    const token = localStorage.getItem("token");
+
+    if(!token) return;
+
+    try{
+
+        const res = await fetch("/my-submissions",{
+            headers:{
+                "Authorization":"Bearer " + token
+            }
+        });
+
+        const submissions = await res.json();
+
+        const container = document.getElementById("mySubmissions");
+
+        if(!container) return;
+
+        container.innerHTML = "";
+
+        if(submissions.length === 0){
+
+            container.innerHTML =
+            `<p class="no-submissions">You haven't submitted any scholarships yet.</p>`;
+
+            return;
+        }
+
+        submissions.forEach(sub => {
+
+            const statusColor =
+                sub.status === "approved" ? "green" :
+                sub.status === "rejected" ? "red" :
+                "orange";
+
+            const card = document.createElement("div");
+
+            card.className = "submission-card";
+
+            card.innerHTML = `
+                <div class="submission-name">${sub.name}</div>
+                <div class="submission-status" style="color:${statusColor}">
+                    Status: ${sub.status}
+                </div>
+            `;
+
+            container.appendChild(card);
+
+        });
+
+    }
+    catch(err){
+        console.error("Failed to load submissions", err);
+    }
+
+}
+
 loadDashboard();
+
+loadUserComments();
+
+loadMySubmissions();

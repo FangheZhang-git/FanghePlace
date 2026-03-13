@@ -5,6 +5,7 @@ form.addEventListener("submit", async (e) => {
 
     const firstNameValue = document.getElementById("first_name").value;
     const lastNameValue = document.getElementById("last_name").value;
+    const userNameValue = document.getElementById("username").value;
     const emailValue = document.getElementById("email").value;
     const passwordValue = document.getElementById("password").value;
 
@@ -16,6 +17,7 @@ form.addEventListener("submit", async (e) => {
         body: JSON.stringify({
             first_name: firstNameValue,
             last_name: lastNameValue,
+            username : userNameValue, 
             email: emailValue,
             password: passwordValue
         })

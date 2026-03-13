@@ -37,23 +37,6 @@ closeLanguageModal.addEventListener("click", () => {
     languageModal.classList.add("hidden");
 });
 
-cancelLanguageModal.addEventListener("click", () => {
-    languageModal.classList.add("hidden");
-});
-
-
-// Save language
-saveLanguageSettings.addEventListener("click", function () {
-
-    const language = document.getElementById("languageSelect").value;
-
-    localStorage.setItem("language", language);
-
-    languageModal.classList.add("hidden");
-
-    alert("Language saved.");
-
-});
 
 
 // Logout

@@ -26,6 +26,9 @@ form.addEventListener("submit", async (e) => {
             atob(data.token.split(".")[1])
         );
 
+        localStorage.setItem("user_id", payload.id);
+        localStorage.setItem("username", payload.username);
+
         messageElement.innerText = "Login successful!";
         messageElement.style.color = "green";
 

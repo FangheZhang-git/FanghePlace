@@ -1,17 +1,20 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 
 <head>
     <title>Dashboard</title>
     <link rel="stylesheet" href="css/profile.css">
     <link rel="stylesheet" href="css/results.css">
+    <link rel="stylesheet" href="css/comments.css">
+    <link rel="icon" href="image/ScholarMatch.png">
     <style>
-        a{
+        a {
             text-decoration: none;
         }
-        .arrow{
+
+        .arrow {
             position: fixed;
-            transform:scale(1.15);
+            transform: scale(1.15);
             top: 20px;
             left: 20px;
         }
@@ -20,8 +23,9 @@
 
 <body>
     <a href="index.html">
-        <svg class="arrow" xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#1f1f1f">
-            <path d="M400-80 0-480l400-400 71 71-329 329 329 329-71 71Z"/>
+        <svg class="arrow" xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px"
+            fill="#1f1f1f">
+            <path d="M400-80 0-480l400-400 71 71-329 329 329 329-71 71Z" />
         </svg>
     </a>
 
@@ -68,8 +72,37 @@
 
     </div>
 
+    <div id="commentsModal" class="modal">
+
+        <div class="modal-content">
+
+            <span class="close" onclick="closeComments()">x</span>
+
+            <h2>Comments</h2>
+
+            <div id="commentsContainer"></div>
+
+
+            <div class="comment-input-area">
+                <textarea id="commentInput" placeholder="Write a comment..."></textarea>
+
+                <button onclick="submitComment()" class="comment-btn">Post Comment</button>
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <div id="google_translate_element" style="display:none;"></div>
+
+    <script src="javascript/translate.js"></script>
+    <script src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
     <script src="javascript/profile.js"></script>
     <script src="javascript/heart.js"></script>
+    <script src="javascript/comments.js"></script>
+    <script src="javascript/profile.js"></script>
+    <script src="javascript/checkToken.js"></script>
 
 </body>
 

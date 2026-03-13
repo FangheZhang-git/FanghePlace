@@ -137,6 +137,10 @@ function calculateScore(profile, sch) {
         score += profile.sat / 100;
     }
 
+    if(profile.sat >= 1500){
+        score += 20;
+    }
+
     if (profile.act) {
         score += profile.act / 2;
     }
@@ -213,11 +217,11 @@ app.get("/search", async (req, res) => {
     }
 });
 
-//easy test route
+//test route
 app.get("/", (req, res) => {
     res.json({ message: "Backend is working!!!" });
 });
-
+//test route
 app.get('/protected', authenticateToken, (req, res) => {
     res.json({
         message: "You accessed protected data!",
@@ -229,7 +233,7 @@ app.get('/protected', authenticateToken, (req, res) => {
 
 app.post('/signup', async (req, res) => {
     try {
-        const { first_name, last_name, email, password } = req.body;
+        const { first_name, last_name, username, email, password } = req.body;
 
         const [existing] = await db.query(
             "SELECT id FROM users WHERE email = ?",
@@ -243,8 +247,8 @@ app.post('/signup', async (req, res) => {
         const hashedPassword = await bcrypt.hash(password, 10);
 
         const [result] = await db.query(
-            "INSERT INTO users (first_name, last_name, email, password) VALUES (?, ?, ?, ?)",
-            [first_name, last_name, email, hashedPassword]
+            "INSERT INTO users (first_name, last_name, username, email, password) VALUES (?, ?, ?, ?, ?)",
+            [first_name, last_name, username, email, hashedPassword]
         );
 
         const userId = result.insertId;
@@ -692,7 +696,7 @@ app.post("/toggle-save", authenticateToken, async (req, res) => {
 
 })
 
-app.get("/saved-ids", authenticateToken, async (req,res)=>{
+app.get("/saved-ids", authenticateToken, async (req, res) => {
 
     const userId = req.user.id
 
@@ -707,7 +711,7 @@ app.get("/saved-ids", authenticateToken, async (req,res)=>{
 
 })
 
-app.get("/saved-scholarships", authenticateToken, async (req,res)=>{
+app.get("/saved-scholarships", authenticateToken, async (req, res) => {
 
     const userId = req.user.id
 
@@ -717,7 +721,7 @@ app.get("/saved-scholarships", authenticateToken, async (req,res)=>{
         JOIN saved_scholarships ss
         ON s.id = ss.scholarship_id
         WHERE ss.user_id=?
-    `,[userId])
+    `, [userId])
 
     res.json(rows)
 
@@ -731,6 +735,12 @@ app.post("/scholarships/:id/comment", async (req, res) => {
 
         const scholarshipId = req.params.id;
         const { user_id, comment } = req.body;
+
+        if (!user_id || !comment || !comment.trim()) {
+            return res.status(400).json({
+                message: "Comment cannot be empty"
+            });
+        }
 
         await db.query(
             `INSERT INTO scholarship_comments 
@@ -758,7 +768,7 @@ app.get("/scholarships/:id/comments", async (req, res) => {
             `SELECT 
                 scholarship_comments.comment,
                 scholarship_comments.created_at,
-                users.name
+                users.username
             FROM scholarship_comments
             JOIN users ON scholarship_comments.user_id = users.id
             WHERE scholarship_comments.scholarship_id = ?
@@ -773,6 +783,299 @@ app.get("/scholarships/:id/comments", async (req, res) => {
     }
 });
 
+
+
+// get comments written by this user
+
+app.get("/users/:id/comments", async (req, res) => {
+    try {
+
+        const userId = req.params.id;
+
+        const [comments] = await db.query(
+            `SELECT 
+                scholarship_comments.comment,
+                scholarship_comments.created_at,
+                scholarships.name AS scholarship_name,
+                scholarships.id AS scholarship_id
+            FROM scholarship_comments
+            JOIN scholarships 
+            ON scholarship_comments.scholarship_id = scholarships.id
+            WHERE scholarship_comments.user_id = ?
+            ORDER BY scholarship_comments.created_at DESC`,
+            [userId]
+        );
+
+        res.json(comments);
+
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+
+//POST route for user to submitt scholarships
+
+// convert empty string to null
+
+
+app.post('/submit-scholarship', authenticateToken, async (req, res) => {
+
+    try {
+
+        const user_id = req.user.id;
+        const user_email = req.user.email;
+
+        const data = Object.fromEntries(
+            Object.entries(req.body).map(([k, v]) => [k, v === "" ? null : v])
+        );
+
+        const {
+            name,
+            provider,
+            min_amount,
+            max_amount,
+            min_gpa,
+            min_sat,
+            min_act,
+            citizenship,
+            state,
+            major,
+            requires_essay,
+            first_gen_only,
+            leadership,
+            min_income,
+            max_income,
+            renewable,
+            description,
+            apply_url,
+            deadline,
+            advanced_coursework_preferred,
+            award,
+            race,
+            type
+        } = data;
+
+        await db.query(
+            `INSERT INTO scholarship_submissions
+            (
+                user_id, user_email,
+                name, provider, min_amount, max_amount, min_gpa, min_sat, min_act,
+                citizenship, state, major, requires_essay, first_gen_only, leadership,
+                min_income, max_income, renewable, description, apply_url, deadline,
+                advanced_coursework_preferred, award, race, type
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [
+                user_id, user_email,
+                name, provider, min_amount, max_amount, min_gpa, min_sat, min_act,
+                citizenship, state, major, requires_essay, first_gen_only, leadership,
+                min_income, max_income, renewable, description, apply_url, deadline,
+                advanced_coursework_preferred, award, race, type
+            ]
+        );
+
+        res.json({ message: "Submission received and pending review." });
+
+    } catch (err) {
+
+        console.error(err);
+
+        res.status(500).json({ error: "Database error" });
+
+    }
+
+});
+
+
+//route for admin to see pending submissions
+
+app.get('/admin/submissions', authenticateToken, requireAdmin, async (req, res) => {
+
+    const [rows] = await db.query(
+        `SELECT *
+         FROM scholarship_submissions
+         WHERE status = 'pending'
+         ORDER BY created_at DESC`
+    );
+
+    res.json(rows);
+
+});
+
+//route for admin to load one submission
+
+app.get('/admin/submissions/:id', authenticateToken, requireAdmin, async (req, res) => {
+
+    const id = req.params.id;
+
+    const [rows] = await db.query(
+        "SELECT * FROM scholarship_submissions WHERE id = ?",
+        [id]
+    );
+
+    if (rows.length === 0) {
+        return res.status(404).json({ message: "Submission not found" });
+    }
+
+    res.json(rows[0]);
+
+});
+
+
+//route to approve a submission
+
+app.post('/admin/submissions/:id/approve', authenticateToken, requireAdmin, async (req, res) => {
+
+    const id = req.params.id;
+
+    const {
+        name,
+        provider,
+        min_amount,
+        max_amount,
+        min_gpa,
+        min_sat,
+        min_act,
+        citizenship,
+        state,
+        major,
+        requires_essay,
+        first_gen_only,
+        leadership,
+        min_income,
+        max_income,
+        renewable,
+        description,
+        apply_url,
+        deadline,
+        advanced_coursework_preferred,
+        award,
+        race,
+        type
+    } = req.body;
+
+    await db.query(
+        `INSERT INTO scholarships
+        (
+            name, provider, min_amount, max_amount, min_gpa, min_sat, min_act,
+            citizenship, state, major, requires_essay, first_gen_only, leadership,
+            min_income, max_income, renewable, description, apply_url, deadline,
+            advanced_coursework_preferred, award, race, type
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+            name, provider, min_amount, max_amount, min_gpa, min_sat, min_act,
+            citizenship, state, major, requires_essay, first_gen_only, leadership,
+            min_income, max_income, renewable, description, apply_url, deadline,
+            advanced_coursework_preferred, award, race, type
+        ]
+    );
+
+    await db.query(
+        "UPDATE scholarship_submissions SET status='approved' WHERE id=?",
+        [id]
+    );
+
+    res.json({ message: "Submission approved and added." });
+
+});
+
+// route to reject submission
+
+app.post('/admin/submissions/:id/reject', authenticateToken, requireAdmin, async (req, res) => {
+
+    const id = req.params.id;
+
+    await db.query(
+        "UPDATE scholarship_submissions SET status='rejected' WHERE id=?",
+        [id]
+    );
+
+    res.json({ message: "Submission rejected." });
+
+});
+
+app.get('/my-submissions', authenticateToken, async (req, res) => {
+
+    const user_id = req.user.id;
+
+    const [rows] = await db.query(
+        `SELECT id, name, status, created_at
+         FROM scholarship_submissions
+         WHERE user_id = ?
+         ORDER BY created_at DESC`,
+        [user_id]
+    );
+
+    res.json(rows);
+
+});
+
+
+app.put('/admin/submissions/:id', authenticateToken, requireAdmin, async (req, res) => {
+
+    const id = req.params.id;
+    const data = req.body;
+
+    await db.query(
+        `UPDATE scholarship_submissions
+         SET 
+            name=?,
+            provider=?,
+            min_amount=?,
+            max_amount=?,
+            min_gpa=?,
+            min_sat=?,
+            min_act=?,
+            citizenship=?,
+            state=?,
+            major=?,
+            requires_essay=?,
+            first_gen_only=?,
+            leadership=?,
+            award=?,
+            deadline=?,
+            type=?,
+            description=?,
+            min_income=?,
+            max_income=?,
+            renewable=?,
+            advanced_coursework_preferred=?,
+            race=?,
+            apply_url=?
+         WHERE id=?`,
+        [
+            data.name,
+            data.provider,
+            data.min_amount,
+            data.max_amount,
+            data.min_gpa,
+            data.min_sat,
+            data.min_act,
+            data.citizenship,
+            data.state,
+            data.major,
+            data.requires_essay,
+            data.first_gen_only,
+            data.leadership,
+            data.award,
+            data.deadline,
+            data.type,
+            data.description,
+            data.min_income,
+            data.max_income,
+            data.renewable,
+            data.advanced_coursework_preferred,
+            data.race,
+            data.apply_url,
+            id
+        ]
+    );
+
+    res.json({ message: "Submission updated successfully" });
+
+});
 
 
 
