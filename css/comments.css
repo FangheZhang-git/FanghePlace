@@ -96,18 +96,19 @@
 
 /* button */
 
-.comment-btn{
-    margin-top:10px;
-    padding:8px 16px;
-    background:#2563eb;
-    color:white;
+.commentButton{
+    background:none;
     border:none;
-    border-radius:6px;
-    font-size:14px;
+    padding:0;
+    margin-top:8px;
+
+    color:#2563eb;
+    font-size:18px;
     font-weight:500;
+
     cursor:pointer;
 }
 
-.comment-btn:hover{
-    background:#1e4ed8;
+.commentButton:hover{
+    text-decoration:underline;
 }

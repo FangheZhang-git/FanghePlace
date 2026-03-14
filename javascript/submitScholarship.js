@@ -1,3 +1,5 @@
+let editingSubmissionId = null;
+
 async function addScholarship() {
 
     const token = localStorage.getItem("token");
@@ -29,13 +31,8 @@ async function addScholarship() {
         apply_url: document.getElementById("apply_url").value
     };
 
-    let url = "http://localhost:3001/add-scholarship";
+    let url = "http://localhost:3001/submit-scholarship";
     let method = "POST";
-
-    if (editingSubmissionId) {
-        url = `http://localhost:3001/admin/submissions/${editingSubmissionId}`;
-        method = "PUT";
-    }
 
     const res = await fetch(url, {
         method: method,

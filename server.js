@@ -63,7 +63,7 @@ function requireAdmin(req, res, next) {
 function calculateScore(profile, sch) {
     let score = 0;
 
-    // ---------- HARD FILTERS (must satisfy) ----------
+    // hard filters that must be satisfied
 
     if (sch.min_gpa && profile.gpa !== null && profile.gpa < sch.min_gpa) {
         return null;
@@ -77,57 +77,48 @@ function calculateScore(profile, sch) {
         return null;
     }
 
-    // citizenship exact match if scholarship requires one
+    // Conditions that need to be matched if there is one
     if (sch.citizenship && profile.citizenship && sch.citizenship !== profile.citizenship) {
         return null;
     }
 
-    // state match if scholarship is state-specific
     if (sch.state && profile.residency && sch.state !== profile.residency) {
         return null;
     }
 
-    // major match if scholarship specifies a major
     if (sch.major && profile.major && sch.major !== profile.major) {
         return null;
     }
 
-    // essay required
     if (sch.requires_essay === 1 && profile.willing_essay !== 1) {
         return null;
     }
 
-    // first-generation required
     if (sch.first_gen_only === 1 && profile.first_gen !== 1) {
         return null;
     }
 
-    // leadership required
     if (sch.leadership === "required" && profile.leadership !== 1) {
         return null;
     }
 
-    // award required
     if (sch.award === "required" && profile.award !== 1) {
         return null;
     }
 
-    // race restriction
     if (sch.race && sch.race !== "any" && profile.race && sch.race !== profile.race) {
         return null;
     }
 
-    // max income
     if (sch.max_income && profile.income !== null && profile.income > sch.max_income) {
         return null;
     }
 
-    // min income
     if (sch.min_income && profile.income !== null && profile.income < sch.min_income) {
         return null;
     }
 
-    // ---------- SCORING ----------
+    // SCORING 
 
     if (profile.gpa) {
         score += profile.gpa * 10;
@@ -443,9 +434,8 @@ app.get("/match", authenticateToken, async (req, res) => {
 });
 
 
-//Phase 3 — Create Admin Routes (CRUD)
+//Create Admin Routes
 
-//We will build clean REST-style admin routes.
 
 
 //View all scholarships (admin only)
@@ -657,10 +647,6 @@ app.get("/profile", authenticateToken, async (req, res) => {
 
 
 //three APIs for saved scholarships
-
-// POST   /toggle-save
-// GET    /saved-scholarships
-// GET    /saved-ids
 app.post("/toggle-save", authenticateToken, async (req, res) => {
 
     const userId = req.user.id
@@ -814,11 +800,9 @@ app.get("/users/:id/comments", async (req, res) => {
 });
 
 
-//POST route for user to submitt scholarships
-
-// convert empty string to null
 
 
+// for user submission
 app.post('/submit-scholarship', authenticateToken, async (req, res) => {
 
     try {

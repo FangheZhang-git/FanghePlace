@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="css/header.css">
     <link rel="stylesheet" href="css/results.css">
+    <link rel="stylesheet" href="css/comments.css">
     <link rel="icon" href="image/ScholarMatch.png">
 
 </head>
@@ -25,7 +26,24 @@
 
     <div id="google_translate_element" style="display:none;"></div>
 
+    <div id="commentsModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeComments()">x</span>
+
+            <h2>Comments</h2>
+
+            <div id="commentsContainer"></div>
+
+            <div class="comment-input-area">
+                <textarea id="commentInput" placeholder="Write a comment..."></textarea>
+                <button onclick="submitComment()" class="comment-btn">Post Comment</button>
+            </div>
+        </div>
+    </div>
+
+
     <script src="javascript/translate.js"></script>
+    <script src="javascript/comments.js"></script>
     <script src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
     <script src="javascript/results.js"></script>
     <script src="javascript/heart.js"></script>

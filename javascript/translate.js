@@ -5,10 +5,10 @@ function googleTranslateElementInit() {
     );
 }
 
-/* ---------- cookie helpers ---------- */
+//Cookie for toggling language
 
 function setGoogleTranslateCookie(lang) {
-    // en 表示恢复原文
+    // en for original text
     if (lang === "en") {
         document.cookie = "googtrans=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
         document.cookie = "googtrans=; path=/; domain=" + location.hostname + "; expires=Thu, 01 Jan 1970 00:00:00 GMT";
@@ -17,10 +17,8 @@ function setGoogleTranslateCookie(lang) {
 
     const value = `/en/${lang}`;
 
-    // 当前域
     document.cookie = `googtrans=${value}; path=/`;
 
-    // 尝试加 domain，某些情况下更稳
     document.cookie = `googtrans=${value}; path=/; domain=${location.hostname}`;
 }
 
@@ -28,15 +26,15 @@ function getSavedLanguage() {
     return localStorage.getItem("language") || "en";
 }
 
-/* ---------- 页面一加载就先写 cookie ---------- */
-/* 这样 Google script 初始化时就能读到语言 */
+// Write cookie when page start loading
+// Language at Initialization
 
 (function applySavedLanguageBeforeGoogleLoads() {
     const lang = getSavedLanguage();
     setGoogleTranslateCookie(lang);
 })();
 
-/* ---------- Save 按钮 ---------- */
+//For save button
 
 function saveLanguage() {
     const lang = document.getElementById("languageSelect").value;
@@ -46,17 +44,16 @@ function saveLanguage() {
     localStorage.setItem("language", lang);
     setGoogleTranslateCookie(lang);
 
-    // 关 modal
+    // turn off modal
     const modal = document.getElementById("languageModal");
     if (modal) {
         modal.classList.add("hidden");
     }
 
-    // 直接刷新，让 Google 按 cookie 翻译
+    // reload and let Google translate work
     location.reload();
 }
 
-/* ---------- modal close ---------- */
 
 document.addEventListener("DOMContentLoaded", () => {
     const modal = document.getElementById("languageModal");
@@ -64,7 +61,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const closeBtn = document.getElementById("closeLanguageModal");
     const select = document.getElementById("languageSelect");
 
-    // 打开 modal 时，默认选中当前语言
+    // when modal is open, select current language
     if (select) {
         select.value = getSavedLanguage();
     }
