@@ -172,13 +172,15 @@ async function addScholarship() {
         type: document.getElementById("type").value
     };
 
-    const url = editingId
+    const url = editingSubmissionId
+        ? `http://localhost:3001/admin/submissions/${editingSubmissionId}`
+        : editingId
         ? `http://localhost:3001/admin/scholarships/${editingId}`
         : "http://localhost:3001/admin/scholarships";
 
-    const method = editingId ? "PUT" : "POST";
+    const method = editingId || editingSubmissionId ? "PUT" : "POST";
 
-    await fetch(url, {
+    const res = await fetch(url, {
         method: method,
 
         headers: {
@@ -190,8 +192,17 @@ async function addScholarship() {
 
     });
 
+    const result = await res.json();
+
+    if (!res.ok) {
+        alert(result.message || "Save failed");
+        return;
+    }
+
     loadScholarships();
+    loadSubmissions();
     editingId = null;
+    editingSubmissionId = null;
     document.querySelector(".add-btn").innerText = "Add Scholarship";
     document
         .querySelectorAll(".form-grid input, .form-grid select, .form-grid textarea")
@@ -270,28 +281,19 @@ async function approveSubmission(id) {
 
     const token = localStorage.getItem("token");
 
-    const res1 = await fetch(`http://localhost:3001/admin/submissions/${id}`, {
+    const res = await fetch(`http://localhost:3001/admin/submissions/${id}/approve`, {
+        method: "POST",
         headers: {
             "Authorization": "Bearer " + token
         }
     });
 
-    const submission = await res1.json();
+    const result = await res.json();
 
-    const res2 = await fetch(`http://localhost:3001/admin/submissions/${id}/approve`, {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-            "Authorization": "Bearer " + token
-        },
-        body: JSON.stringify(submission)
-    });
-
-    const result = await res2.json();
-
-    alert(result.message);
+    alert(result.message || "Approval failed");
 
     loadSubmissions();
+    loadScholarships();
 
 }
 

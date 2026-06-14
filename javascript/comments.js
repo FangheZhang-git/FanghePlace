@@ -15,6 +15,12 @@ async function openComments(id) {
     const container = document.getElementById("commentsContainer");
     container.innerHTML = "";
 
+    if (comments.length === 0) {
+        container.innerHTML = `<p class="empty-comments">No comments yet. Start the conversation.</p>`;
+        document.getElementById("commentsModal").style.display = "flex";
+        return;
+    }
+
     comments.forEach(c => {
 
         const div = document.createElement("div");

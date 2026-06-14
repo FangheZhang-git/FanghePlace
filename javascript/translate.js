@@ -5,6 +5,58 @@ function googleTranslateElementInit() {
     );
 }
 
+window.googleTranslateElementInit = googleTranslateElementInit;
+
+function hideGoogleTranslateChrome() {
+    if (document.getElementById("googleTranslateChromeStyles")) {
+        return;
+    }
+
+    const style = document.createElement("style");
+    style.id = "googleTranslateChromeStyles";
+    style.textContent = `
+        .goog-te-banner-frame,
+        .goog-te-banner-frame.skiptranslate,
+        .goog-te-balloon-frame,
+        iframe.goog-te-banner-frame,
+        body > .skiptranslate,
+        #goog-gt-tt,
+        .goog-tooltip,
+        .goog-tooltip:hover {
+            display: none !important;
+            visibility: hidden !important;
+        }
+
+        html,
+        body {
+            top: 0 !important;
+            margin-top: 0 !important;
+        }
+
+        .goog-text-highlight {
+            background: transparent !important;
+            box-shadow: none !important;
+        }
+    `;
+    document.head.appendChild(style);
+}
+
+function removeGoogleTranslateOffset() {
+    document.documentElement.style.top = "0";
+    document.body.style.top = "0";
+}
+
+function loadGoogleTranslateScript() {
+    if (document.getElementById("googleTranslateScript")) {
+        return;
+    }
+
+    const script = document.createElement("script");
+    script.id = "googleTranslateScript";
+    script.src = "//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit";
+    document.body.appendChild(script);
+}
+
 //Cookie for toggling language
 
 function setGoogleTranslateCookie(lang) {
@@ -32,6 +84,11 @@ function getSavedLanguage() {
 (function applySavedLanguageBeforeGoogleLoads() {
     const lang = getSavedLanguage();
     setGoogleTranslateCookie(lang);
+    hideGoogleTranslateChrome();
+
+    if (lang !== "en") {
+        document.addEventListener("DOMContentLoaded", loadGoogleTranslateScript);
+    }
 })();
 
 //For save button
@@ -56,6 +113,19 @@ function saveLanguage() {
 
 
 document.addEventListener("DOMContentLoaded", () => {
+    hideGoogleTranslateChrome();
+    removeGoogleTranslateOffset();
+
+    const observer = new MutationObserver(removeGoogleTranslateOffset);
+    observer.observe(document.documentElement, {
+        attributes: true,
+        attributeFilter: ["style", "class"]
+    });
+    observer.observe(document.body, {
+        attributes: true,
+        attributeFilter: ["style", "class"]
+    });
+
     const modal = document.getElementById("languageModal");
     const backdrop = document.querySelector(".modal-backdrop");
     const closeBtn = document.getElementById("closeLanguageModal");

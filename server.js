@@ -78,7 +78,7 @@ function calculateScore(profile, sch) {
     }
 
     // Conditions that need to be matched if there is one
-    if (sch.citizenship && profile.citizenship && sch.citizenship !== profile.citizenship) {
+    if (sch.citizenship && sch.citizenship !== "No Restriction" && profile.citizenship && sch.citizenship !== profile.citizenship) {
         return null;
     }
 
@@ -805,6 +805,89 @@ app.get("/users/:id/comments", async (req, res) => {
 
 
 // for user submission
+function emptyToNull(value) {
+    return value === "" || value === undefined ? null : value;
+}
+
+function normalizeScholarshipData(input) {
+    const data = Object.fromEntries(
+        Object.entries(input).map(([key, value]) => [key, emptyToNull(value)])
+    );
+
+    return {
+        name: data.name,
+        provider: data.provider,
+        min_amount: data.min_amount,
+        max_amount: data.max_amount,
+        min_gpa: data.min_gpa,
+        min_sat: data.min_sat,
+        min_act: data.min_act,
+        citizenship: data.citizenship,
+        state: data.state,
+        major: data.major,
+        requires_essay: data.requires_essay,
+        first_gen_only: data.first_gen_only,
+        leadership: data.leadership,
+        min_income: data.min_income,
+        max_income: data.max_income,
+        renewable: data.renewable,
+        description: data.description,
+        apply_url: data.apply_url,
+        deadline: data.deadline,
+        advanced_coursework_preferred: data.advanced_coursework_preferred,
+        award: data.award,
+        race: data.race,
+        type: data.type
+    };
+}
+
+function scholarshipValues(data) {
+    return [
+        data.name,
+        data.provider,
+        data.min_amount,
+        data.max_amount,
+        data.min_gpa,
+        data.min_sat,
+        data.min_act,
+        data.citizenship,
+        data.state,
+        data.major,
+        data.requires_essay,
+        data.first_gen_only,
+        data.leadership,
+        data.min_income,
+        data.max_income,
+        data.renewable,
+        data.description,
+        data.apply_url,
+        data.deadline,
+        data.advanced_coursework_preferred,
+        data.award,
+        data.race,
+        data.type
+    ];
+}
+
+const scholarshipColumns = `
+    name, provider, min_amount, max_amount, min_gpa, min_sat, min_act,
+    citizenship, state, major, requires_essay, first_gen_only, leadership,
+    min_income, max_income, renewable, description, apply_url, deadline,
+    advanced_coursework_preferred, award, race, type
+`;
+
+function validateSubmittedScholarship(data) {
+    if (!data.name || !data.name.trim()) {
+        return "Scholarship name is required";
+    }
+
+    if (data.min_amount === null || data.max_amount === null) {
+        return "Min amount and max amount are required";
+    }
+
+    return null;
+}
+
 app.post('/submit-scholarship', authenticateToken, async (req, res) => {
 
     try {
@@ -812,52 +895,21 @@ app.post('/submit-scholarship', authenticateToken, async (req, res) => {
         const user_id = req.user.id;
         const user_email = req.user.email;
 
-        const data = Object.fromEntries(
-            Object.entries(req.body).map(([k, v]) => [k, v === "" ? null : v])
-        );
+        const data = normalizeScholarshipData(req.body);
+        const validationError = validateSubmittedScholarship(data);
 
-        const {
-            name,
-            provider,
-            min_amount,
-            max_amount,
-            min_gpa,
-            min_sat,
-            min_act,
-            citizenship,
-            state,
-            major,
-            requires_essay,
-            first_gen_only,
-            leadership,
-            min_income,
-            max_income,
-            renewable,
-            description,
-            apply_url,
-            deadline,
-            advanced_coursework_preferred,
-            award,
-            race,
-            type
-        } = data;
+        if (validationError) {
+            return res.status(400).json({ error: validationError });
+        }
 
         await db.query(
             `INSERT INTO scholarship_submissions
             (
-                user_id, user_email,
-                name, provider, min_amount, max_amount, min_gpa, min_sat, min_act,
-                citizenship, state, major, requires_essay, first_gen_only, leadership,
-                min_income, max_income, renewable, description, apply_url, deadline,
-                advanced_coursework_preferred, award, race, type
+                user_id, user_email, ${scholarshipColumns}
             )
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [
-                user_id, user_email,
-                name, provider, min_amount, max_amount, min_gpa, min_sat, min_act,
-                citizenship, state, major, requires_essay, first_gen_only, leadership,
-                min_income, max_income, renewable, description, apply_url, deadline,
-                advanced_coursework_preferred, award, race, type
+                user_id, user_email, ...scholarshipValues(data)
             ]
         );
 
@@ -914,56 +966,58 @@ app.get('/admin/submissions/:id', authenticateToken, requireAdmin, async (req, r
 app.post('/admin/submissions/:id/approve', authenticateToken, requireAdmin, async (req, res) => {
 
     const id = req.params.id;
+    const connection = await db.getConnection();
 
-    const {
-        name,
-        provider,
-        min_amount,
-        max_amount,
-        min_gpa,
-        min_sat,
-        min_act,
-        citizenship,
-        state,
-        major,
-        requires_essay,
-        first_gen_only,
-        leadership,
-        min_income,
-        max_income,
-        renewable,
-        description,
-        apply_url,
-        deadline,
-        advanced_coursework_preferred,
-        award,
-        race,
-        type
-    } = req.body;
+    try {
+        await connection.beginTransaction();
 
-    await db.query(
-        `INSERT INTO scholarships
-        (
-            name, provider, min_amount, max_amount, min_gpa, min_sat, min_act,
-            citizenship, state, major, requires_essay, first_gen_only, leadership,
-            min_income, max_income, renewable, description, apply_url, deadline,
-            advanced_coursework_preferred, award, race, type
-        )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [
-            name, provider, min_amount, max_amount, min_gpa, min_sat, min_act,
-            citizenship, state, major, requires_essay, first_gen_only, leadership,
-            min_income, max_income, renewable, description, apply_url, deadline,
-            advanced_coursework_preferred, award, race, type
-        ]
-    );
+        const [rows] = await connection.query(
+            "SELECT * FROM scholarship_submissions WHERE id = ? FOR UPDATE",
+            [id]
+        );
 
-    await db.query(
-        "UPDATE scholarship_submissions SET status='approved' WHERE id=?",
-        [id]
-    );
+        if (rows.length === 0) {
+            await connection.rollback();
+            return res.status(404).json({ message: "Submission not found" });
+        }
 
-    res.json({ message: "Submission approved and added." });
+        const submission = rows[0];
+
+        if (submission.status !== "pending") {
+            await connection.rollback();
+            return res.status(409).json({ message: `Submission is already ${submission.status}.` });
+        }
+
+        const data = normalizeScholarshipData(submission);
+        const validationError = validateSubmittedScholarship(data);
+
+        if (validationError) {
+            await connection.rollback();
+            return res.status(400).json({ message: validationError });
+        }
+
+        await connection.query(
+            `INSERT INTO scholarships (${scholarshipColumns})
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            scholarshipValues(data)
+        );
+
+        await connection.query(
+            "UPDATE scholarship_submissions SET status='approved', reviewed_at=NOW(), reviewed_by=? WHERE id=?",
+            [req.user.id, id]
+        );
+
+        await connection.commit();
+
+        res.json({ message: "Submission approved and added." });
+
+    } catch (err) {
+        await connection.rollback();
+        console.error(err);
+        res.status(500).json({ message: "Error approving submission" });
+    } finally {
+        connection.release();
+    }
 
 });
 
@@ -974,8 +1028,8 @@ app.post('/admin/submissions/:id/reject', authenticateToken, requireAdmin, async
     const id = req.params.id;
 
     await db.query(
-        "UPDATE scholarship_submissions SET status='rejected' WHERE id=?",
-        [id]
+        "UPDATE scholarship_submissions SET status='rejected', reviewed_at=NOW(), reviewed_by=? WHERE id=?",
+        [req.user.id, id]
     );
 
     res.json({ message: "Submission rejected." });
@@ -1001,65 +1055,38 @@ app.get('/my-submissions', authenticateToken, async (req, res) => {
 
 app.put('/admin/submissions/:id', authenticateToken, requireAdmin, async (req, res) => {
 
-    const id = req.params.id;
-    const data = req.body;
+    try {
+        const id = req.params.id;
+        const data = normalizeScholarshipData(req.body);
+        const validationError = validateSubmittedScholarship(data);
 
-    await db.query(
-        `UPDATE scholarship_submissions
-         SET 
-            name=?,
-            provider=?,
-            min_amount=?,
-            max_amount=?,
-            min_gpa=?,
-            min_sat=?,
-            min_act=?,
-            citizenship=?,
-            state=?,
-            major=?,
-            requires_essay=?,
-            first_gen_only=?,
-            leadership=?,
-            award=?,
-            deadline=?,
-            type=?,
-            description=?,
-            min_income=?,
-            max_income=?,
-            renewable=?,
-            advanced_coursework_preferred=?,
-            race=?,
-            apply_url=?
-         WHERE id=?`,
-        [
-            data.name,
-            data.provider,
-            data.min_amount,
-            data.max_amount,
-            data.min_gpa,
-            data.min_sat,
-            data.min_act,
-            data.citizenship,
-            data.state,
-            data.major,
-            data.requires_essay,
-            data.first_gen_only,
-            data.leadership,
-            data.award,
-            data.deadline,
-            data.type,
-            data.description,
-            data.min_income,
-            data.max_income,
-            data.renewable,
-            data.advanced_coursework_preferred,
-            data.race,
-            data.apply_url,
-            id
-        ]
-    );
+        if (validationError) {
+            return res.status(400).json({ message: validationError });
+        }
 
-    res.json({ message: "Submission updated successfully" });
+        const [result] = await db.query(
+            `UPDATE scholarship_submissions
+             SET ${scholarshipColumns
+                .split(",")
+                .map(column => `${column.trim()}=?`)
+                .join(", ")}
+             WHERE id=? AND status='pending'`,
+            [
+                ...scholarshipValues(data),
+                id
+            ]
+        );
+
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ message: "Pending submission not found" });
+        }
+
+        res.json({ message: "Submission updated successfully" });
+
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: "Error updating submission" });
+    }
 
 });
 
