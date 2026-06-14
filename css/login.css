@@ -6,21 +6,22 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    height: 100vh;
+    min-height: 100dvh;
+    padding: 1rem;
 }
 
 /* Container box */
 form {
     background: white;
-    padding: 40px;
-    border-radius: 10px;
+    padding: clamp(1.5rem, 6vw, 2.5rem);
+    border-radius: 0.625rem;
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
-    width: 300px;
+    width: min(100%, 20rem);
     text-align: center;
 }
 
 h2 {
-    margin-bottom: 25px;
+    margin-bottom: 1.5625rem;
     font-weight: 600;
     text-align: center;
 }
@@ -28,10 +29,10 @@ h2 {
 /* Input fields */
 .loginGroup {
     width: 100%;
-    padding: 10px;
-    border-radius: 5px;
+    padding: 0.625rem;
+    border-radius: 0.3125rem;
     border: 1px solid #ccc;
-    font-size: 14px;
+    font-size: 0.875rem;
     transition: 0.3s;
 }
 
@@ -44,12 +45,12 @@ h2 {
 /* Button */
 button {
     width: 100%;
-    padding: 10px;
-    border-radius: 5px;
+    padding: 0.625rem;
+    border-radius: 0.3125rem;
     border: none;
     background-color:  #0000FF;
     color: white;
-    font-size: 16px;
+    font-size: 1rem;
     cursor: pointer;
     transition: 0.3s;
 }
@@ -60,7 +61,7 @@ button:hover {
 
 
 #message {
-    margin-top: 15px;
+    margin-top: 0.9375rem;
     font-weight: bold;
     color: green;
 }
@@ -71,10 +72,10 @@ button:hover {
 }
 
 .terms {
-    font-size: 12px;
+    font-size: 0.75rem;
     color: #777;
     text-align: center;
-    margin-top: 15px;
+    margin-top: 0.9375rem;
 }
 
 .terms a {
@@ -84,8 +85,8 @@ button:hover {
 
 .signup {
     text-align: center;
-    margin-top: 15px;
-    font-size: 14px;
+    margin-top: 0.9375rem;
+    font-size: 0.875rem;
 }
 
 .signup a {
@@ -96,23 +97,23 @@ button:hover {
 
 .loginGroup {
     width: 100%;
-    padding: 10px;
-    border-radius: 5px;
+    padding: 0.625rem;
+    border-radius: 0.3125rem;
     border: 1px solid #ccc;
-    font-size: 14px;
+    font-size: 0.875rem;
     transition: 0.3s;
-    margin-bottom: 15px;
+    margin-bottom: 0.9375rem;
 }
 
 button {
     width: 100%;
-    padding: 10px;
-    border-radius: 5px;
+    padding: 0.625rem;
+    border-radius: 0.3125rem;
     border: none;
     background-color: #0000FF;
     color: white;
-    font-size: 16px;
+    font-size: 1rem;
     cursor: pointer;
     transition: 0.3s;
-    margin-top: 10px;
+    margin-top: 0.625rem;
 }

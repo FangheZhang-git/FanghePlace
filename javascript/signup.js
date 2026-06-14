@@ -1,5 +1,10 @@
 const form = document.getElementById("signupForm");
 
+function goToLoadingPage(nextPage, message) {
+    window.location.href =
+        `loading.html?next=${encodeURIComponent(nextPage)}&message=${encodeURIComponent(message)}`;
+}
+
 form.addEventListener("submit", async (e) => {
     e.preventDefault();
 
@@ -17,7 +22,7 @@ form.addEventListener("submit", async (e) => {
         body: JSON.stringify({
             first_name: firstNameValue,
             last_name: lastNameValue,
-            username : userNameValue,
+            username: userNameValue,
             email: emailValue,
             password: passwordValue
         })
@@ -34,17 +39,16 @@ form.addEventListener("submit", async (e) => {
         //save login token
         localStorage.setItem("token", data.token);
 
-        setTimeout(()=>{
-            window.location.href = "index.html";
-        }, 1000);
+        const payload = JSON.parse(
+            atob(data.token.split(".")[1])
+        );
+
+        localStorage.setItem("user_id", payload.id);
+        localStorage.setItem("username", payload.username);
+
+        goToLoadingPage("index.html", "Creating your account");
     }
     else{
         messageBox.classList.add("error");
     }
-    
-    document.getElementById("message").innerText = data.message;
-
-    setTimeout(() =>{
-        window.location.href = "index.html";
-    }, 1000);
 });

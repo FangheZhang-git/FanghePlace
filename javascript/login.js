@@ -1,6 +1,11 @@
 
 const form = document.getElementById("loginForm");
 
+function goToLoadingPage(nextPage, message) {
+    window.location.href =
+        `loading.html?next=${encodeURIComponent(nextPage)}&message=${encodeURIComponent(message)}`;
+}
+
 form.addEventListener("submit", async (e) => {
     e.preventDefault();
 
@@ -32,13 +37,8 @@ form.addEventListener("submit", async (e) => {
         messageElement.innerText = "Login successful!";
         messageElement.style.color = "green";
 
-        setTimeout(() => {
-            if (payload.is_admin) {
-                window.location.href = "admin.html";
-            } else {
-                window.location.href = "index.html";
-            }
-        }, 800);
+        const nextPage = payload.is_admin ? "admin.html" : "index.html";
+        goToLoadingPage(nextPage, "Logging you in");
 
     } else {
         messageElement.innerText = data.message;

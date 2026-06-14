@@ -244,7 +244,7 @@ app.post('/signup', async (req, res) => {
 
         const userId = result.insertId;
         const token = jwt.sign(
-            { id: userId, email: email },
+            { id: userId, email: email, username: username, is_admin: 0 },
             JWT_SECRET,
             { expiresIn: "1h" }
         );
@@ -289,6 +289,7 @@ app.post('/login', async (req, res) => {
             {
                 id: user.id,
                 email: user.email,
+                username: user.username,
                 is_admin: user.is_admin
             },
             JWT_SECRET,
@@ -716,13 +717,14 @@ app.get("/saved-scholarships", authenticateToken, async (req, res) => {
 
 //comment function (POST Comment)
 
-app.post("/scholarships/:id/comment", async (req, res) => {
+app.post("/scholarships/:id/comment", authenticateToken, async (req, res) => {
     try {
 
         const scholarshipId = req.params.id;
-        const { user_id, comment } = req.body;
+        const user_id = req.user.id;
+        const { comment } = req.body;
 
-        if (!user_id || !comment || !comment.trim()) {
+        if (!comment || !comment.trim()) {
             return res.status(400).json({
                 message: "Comment cannot be empty"
             });

@@ -1,30 +1,34 @@
 #main {
   text-align: center;
-  padding: 60px 20px 20px 20px;
+  padding: clamp(2rem, 8vw, 3.75rem) 1.25rem 1.25rem;
 }
 
 /* big welcome text */
 #welcome {
-  font-size: 48px;
+  font-size: clamp(2rem, 7vw, 3rem);
   font-weight: bold;
-  margin-bottom: 20px;
+  margin-bottom: 1.25rem;
+  line-height: 1.1;
 }
 
 /* mission text */
 #mission {
-  font-size: 18px;
+  font-size: clamp(1rem, 3vw, 1.125rem);
   color: #555;
-  max-width: 700px;
-  margin: 0 auto 30px;
+  max-width: 43.75rem;
+  margin: 0 auto 1.875rem;
+  line-height: 1.5;
 }
 /* big button */
 #search-button {
-  font-size: 18px;
-  padding: 14px 28px;
+  font-size: 1.125rem;
+  padding: 0.875rem 1.75rem;
   background-color: #0000FF;
   color: white;
   border: none;
   cursor: pointer;
+  max-width: 100%;
+  white-space: normal;
 }
 
 #search-button:hover{

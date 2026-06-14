@@ -1,9 +1,9 @@
 let currentScholarshipId = null;
-const currentUserId = localStorage.getItem("user_id");
-const currentUsername = localStorage.getItem("username");
 
 async function openComments(id) {
-    if (!currentUserId) {
+    const token = localStorage.getItem("token");
+
+    if (!token) {
         alert("Please login first");
         return;
     }
@@ -43,6 +43,7 @@ async function openComments(id) {
 
 async function submitComment() {
 
+    const token = localStorage.getItem("token");
     const text = document.getElementById("commentInput").value.trim();
 
     if (!text) {
@@ -50,7 +51,7 @@ async function submitComment() {
         return;
     }
 
-    if (!currentUserId) {
+    if (!token) {
         alert("Please login first");
         return;
     }
@@ -58,10 +59,10 @@ async function submitComment() {
     await fetch(`http://localhost:3001/scholarships/${currentScholarshipId}/comment`, {
         method: "POST",
         headers: {
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
+            "Authorization": "Bearer " + token
         },
         body: JSON.stringify({
-            user_id: currentUserId,
             comment: text
         })
     });

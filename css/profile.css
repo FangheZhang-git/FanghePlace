@@ -4,32 +4,32 @@ background-color:#f5f5f5;
 }
 
 .container{
-max-width:800px;
-width:90%;
+width:min(100% - 2rem, 50rem);
 margin:auto;
 }
 
 .section{
 background:white;
-padding:20px;
-margin-top:20px;
-border-radius:10px;
+padding:clamp(1rem, 4vw, 1.25rem);
+margin-top:1.25rem;
+border-radius:0.625rem;
+overflow-wrap:anywhere;
 }
 
 .smallText{
 color:gray;
-font-size:14px;
+font-size:0.875rem;
 }
 
 
 .apply-right-now {
     display: inline-block;
-    margin-top: 12px;
-    padding: 10px 16px;
+    margin-top: 0.75rem;
+    padding: 0.625rem 1rem;
     background-color: #2563eb;
     color: white;
     text-decoration: none;
-    border-radius: 6px;
+    border-radius: 0.375rem;
     font-weight: 600;
     transition: background-color 0.2s ease;
 }
@@ -43,7 +43,7 @@ font-size:14px;
 .user-comment-card{
 
     border-bottom:1px solid #eee;
-    padding:15px 0;
+    padding:0.9375rem 0;
 
 }
 
@@ -51,31 +51,32 @@ font-size:14px;
 
     font-weight:600;
     color:#2563eb;
-    margin-bottom:5px;
+    margin-bottom:0.3125rem;
 
 }
 
 .comment-text{
 
     color:#333;
-    margin-bottom:5px;
+    margin-bottom:0.3125rem;
 
 }
 
 .comment-date{
 
-    font-size:12px;
+    font-size:0.75rem;
     color:#888;
 
 }
 
 
 .submission-card{
-padding:12px 16px;
-border-radius:10px;
+padding:0.75rem 1rem;
+border-radius:0.625rem;
 border:1px solid #ddd;
-margin-bottom:12px;
+margin-bottom:0.75rem;
 background:white;
+overflow-wrap:anywhere;
 }
 
 .submission-name{
@@ -84,10 +85,10 @@ margin-bottom:4px;
 }
 
 .submission-status{
-font-size:14px;
+font-size:0.875rem;
 }
 
 .no-submissions{
 color:#888;
-font-size:14px;
+font-size:0.875rem;
 }

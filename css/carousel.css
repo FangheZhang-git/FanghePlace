@@ -1,5 +1,5 @@
 .background {
-    padding: 20px;
+    padding: clamp(1rem, 4vw, 1.25rem);
     display: flex;
     justify-content: center;
 }
@@ -10,9 +10,10 @@
     position: relative;
     overflow: hidden;
     width: 100%;
-    width: 1000px;
-    height: 280px;
-    border-radius: 10px;
+    max-width: 62.5rem;
+    aspect-ratio: 25 / 7;
+    min-height: 12rem;
+    border-radius: 0.625rem;
 }
 
 .slide {
@@ -33,22 +34,12 @@
 
 
 @media (max-width: 900px) {
-
-    .header {
-        flex-wrap: wrap;
-        gap: 20px;
-    }
-
-    .SEARCH input {
-        width: 100%;
-    }
-
     #welcome {
-        font-size: 32px;
+        font-size: clamp(2rem, 9vw, 3rem);
     }
 
     #mission {
-        font-size: 16px;
+        font-size: 1rem;
     }
 
 }

@@ -119,7 +119,7 @@ async function loadMySubmissions(){
 
     try{
 
-        const res = await fetch("/my-submissions",{
+        const res = await fetch("http://localhost:3001/my-submissions",{
             headers:{
                 "Authorization":"Bearer " + token
             }

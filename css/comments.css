@@ -12,38 +12,40 @@
 
     justify-content: center;
     align-items: center;
+    padding: 1rem;
 }
 
 .modal-content {
     background-color: white;
-    padding: 25px;
-    height: 500px;
-    width: 700px;
+    padding: clamp(1rem, 4vw, 1.5625rem);
+    width: min(100%, 43.75rem);
+    max-height: calc(100dvh - 2rem);
+    overflow-y: auto;
 
-    border-radius: 10px;
+    border-radius: 0.625rem;
     box-shadow: 0 5px 25px rgba(0,0,0,0.2);
 }
 
 .close {
     float: right;
-    font-size: 20px;
+    font-size: 1.25rem;
     cursor: pointer;
 }
 
 #commentsContainer {
-    max-height: 250px;
+    max-height: min(16rem, 35dvh);
     overflow-y: auto;
-    margin-bottom: 15px;
+    margin-bottom: 0.9375rem;
 }
 
 #commentInput {
     width: 100%;
-    height: 80px;
-    margin-bottom: 10px;
-    padding: 12px;
+    min-height: 5rem;
+    margin-bottom: 0.625rem;
+    padding: 0.75rem;
     border: 1px solid #dcdcdc;
-    border-radius: 8px;
-    font-size: 14px;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
     resize: none;
     outline: none;
 }
@@ -57,7 +59,7 @@
 /* comment card */
 
 .comment {
-    padding: 12px 0;
+    padding: 0.75rem 0;
     border-bottom: 1px solid #e6e6e6;
 }
 
@@ -67,7 +69,9 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 6px;
+    gap: 0.75rem;
+    margin-bottom: 0.375rem;
+    flex-wrap: wrap;
 }
 
 /* username */
@@ -80,14 +84,14 @@
 /* date */
 
 .comment-date {
-    font-size: 12px;
+    font-size: 0.75rem;
     color: #888;
 }
 
 /* comment text */
 
 .comment-text {
-    font-size: 14px;
+    font-size: 0.875rem;
     line-height: 1.4;
     color: #444;
 }
@@ -100,10 +104,10 @@
     background:none;
     border:none;
     padding:0;
-    margin-top:8px;
+    margin-top:0.5rem;
 
     color:#2563eb;
-    font-size:18px;
+    font-size:1.125rem;
     font-weight:500;
 
     cursor:pointer;
