@@ -2,6 +2,8 @@ require("dotenv").config();
 const express = require("express");
 const mysql = require("mysql2/promise");
 const cors = require("cors");
+const helmet = require("helmet");
+const rateLimit = require("express-rate-limit");
 const jwt = require('jsonwebtoken');
 
 const JWT_SECRET = process.env.JWT_SECRET;
@@ -9,11 +11,55 @@ const JWT_SECRET = process.env.JWT_SECRET;
 const app = express();
 const bcrypt = require('bcrypt');
 
+const allowedOrigins = new Set([
+    "http://localhost:8080",
+    "http://127.0.0.1:8080",
+    "http://localhost:5501",
+    "http://127.0.0.1:5501",
+    ...(process.env.FRONTEND_ORIGIN || "")
+        .split(",")
+        .map(origin => origin.trim())
+        .filter(Boolean)
+]);
 
-app.use(cors());
-app.use(express.json());
+app.disable("x-powered-by");
+app.set("trust proxy", 1);
 
+app.use(helmet());
+app.use(cors({
+    origin(origin, callback) {
+        if (!origin || allowedOrigins.has(origin)) {
+            return callback(null, true);
+        }
 
+        return callback(new Error("Not allowed by CORS"));
+    }
+}));
+app.use(express.json({ limit: "50kb" }));
+
+const authLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 10,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { message: "Too many login or signup attempts. Please try again later." }
+});
+
+const commentLimiter = rateLimit({
+    windowMs: 60 * 1000,
+    max: 5,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { message: "You are posting comments too quickly. Please wait and try again." }
+});
+
+const submissionLimiter = rateLimit({
+    windowMs: 60 * 60 * 1000,
+    max: 5,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { message: "Too many scholarship submissions. Please try again later." }
+});
 
 const db = mysql.createPool({
     host: process.env.DB_HOST,
@@ -222,7 +268,7 @@ app.get('/protected', authenticateToken, (req, res) => {
 
 
 
-app.post('/signup', async (req, res) => {
+app.post('/signup', authLimiter, async (req, res) => {
     try {
         const { first_name, last_name, username, email, password } = req.body;
 
@@ -264,7 +310,7 @@ app.post('/signup', async (req, res) => {
 
 
 
-app.post('/login', async (req, res) => {
+app.post('/login', authLimiter, async (req, res) => {
     try {
         const { email, password } = req.body;
 
@@ -716,7 +762,7 @@ app.get("/saved-scholarships", authenticateToken, async (req, res) => {
 
 //comment function (POST Comment)
 
-app.post("/scholarships/:id/comment", authenticateToken, async (req, res) => {
+app.post("/scholarships/:id/comment", commentLimiter, authenticateToken, async (req, res) => {
     try {
 
         const scholarshipId = req.params.id;
@@ -901,7 +947,7 @@ function validateSubmittedScholarship(data) {
     return null;
 }
 
-app.post('/submit-scholarship', authenticateToken, async (req, res) => {
+app.post('/submit-scholarship', submissionLimiter, authenticateToken, async (req, res) => {
 
     try {
 
@@ -1110,6 +1156,16 @@ app.put('/admin/submissions/:id', authenticateToken, requireAdmin, async (req, r
 
 //start server
 const PORT = process.env.PORT || 5000;
+
+app.use((err, req, res, next) => {
+    if (err.message === "Not allowed by CORS") {
+        return res.status(403).json({ message: "CORS origin not allowed" });
+    }
+
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
+});
+
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
 });
