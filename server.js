@@ -714,7 +714,6 @@ app.get("/saved-scholarships", authenticateToken, async (req, res) => {
 
 })
 
-
 //comment function (POST Comment)
 
 app.post("/scholarships/:id/comment", authenticateToken, async (req, res) => {
@@ -722,9 +721,9 @@ app.post("/scholarships/:id/comment", authenticateToken, async (req, res) => {
 
         const scholarshipId = req.params.id;
         const user_id = req.user.id;
-        const { comment } = req.body;
+        const comment = (req.body.comment || "").trim();
 
-        if (!comment || !comment.trim()) {
+        if (!comment) {
             return res.status(400).json({
                 message: "Comment cannot be empty"
             });

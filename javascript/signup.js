@@ -1,8 +1,9 @@
 const form = document.getElementById("signupForm");
 
 function goToLoadingPage(nextPage, message) {
-    window.location.href =
-        `loading.html?next=${encodeURIComponent(nextPage)}&message=${encodeURIComponent(message)}`;
+    window.location.replace(
+        `loading.html?next=${encodeURIComponent(nextPage)}&message=${encodeURIComponent(message)}`
+    );
 }
 
 form.addEventListener("submit", async (e) => {

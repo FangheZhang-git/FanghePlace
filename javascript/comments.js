@@ -50,7 +50,8 @@ async function openComments(id) {
 async function submitComment() {
 
     const token = localStorage.getItem("token");
-    const text = document.getElementById("commentInput").value.trim();
+    const input = document.getElementById("commentInput");
+    const text = input.value.trim();
 
     if (!text) {
         alert("Comment cannot be empty");
@@ -62,7 +63,7 @@ async function submitComment() {
         return;
     }
 
-    await fetch(`http://localhost:3001/scholarships/${currentScholarshipId}/comment`, {
+    const res = await fetch(`http://localhost:3001/scholarships/${currentScholarshipId}/comment`, {
         method: "POST",
         headers: {
             "Content-Type": "application/json",
@@ -73,7 +74,14 @@ async function submitComment() {
         })
     });
 
-    document.getElementById("commentInput").value = "";
+    const data = await res.json();
+
+    if (!res.ok) {
+        alert(data.message || data.error || "Failed to post comment");
+        return;
+    }
+
+    input.value = "";
 
     openComments(currentScholarshipId);
 }
