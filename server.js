@@ -729,6 +729,20 @@ app.post("/scholarships/:id/comment", authenticateToken, async (req, res) => {
             });
         }
 
+        const [todayComments] = await db.query(
+            `SELECT COUNT(*) AS comment_count
+             FROM scholarship_comments
+             WHERE user_id = ?
+             AND DATE(created_at) = CURRENT_DATE`,
+            [user_id]
+        );
+
+        if (todayComments[0].comment_count >= 2) {
+            return res.status(429).json({
+                message: "You can only post 2 comments per day."
+            });
+        }
+
         await db.query(
             `INSERT INTO scholarship_comments 
             (scholarship_id, user_id, comment)
