@@ -9,7 +9,7 @@ async function openComments(id) {
     }
     currentScholarshipId = id;
 
-    const res = await fetch(`http://localhost:3001/scholarships/${id}/comments`)
+    const res = await fetch(`/scholarships/${id}/comments`)
     const comments = await res.json();
 
     const container = document.getElementById("commentsContainer");
@@ -63,7 +63,7 @@ async function submitComment() {
         return;
     }
 
-    const res = await fetch(`http://localhost:3001/scholarships/${currentScholarshipId}/comment`, {
+    const res = await fetch(`/scholarships/${currentScholarshipId}/comment`, {
         method: "POST",
         headers: {
             "Content-Type": "application/json",

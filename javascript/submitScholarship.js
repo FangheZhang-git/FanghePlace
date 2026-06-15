@@ -31,7 +31,7 @@ async function addScholarship() {
         apply_url: document.getElementById("apply_url").value
     };
 
-    let url = "http://localhost:3001/submit-scholarship";
+    let url = "/submit-scholarship";
     let method = "POST";
 
     const res = await fetch(url, {

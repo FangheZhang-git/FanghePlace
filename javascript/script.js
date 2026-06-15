@@ -43,7 +43,7 @@ document.getElementById("Form").addEventListener("submit", async function (e) {
 
   console.log("PROFILE SUBMIT:", studentProfile);
 
-  const res = await fetch("http://localhost:3001/profile", {
+  const res = await fetch("/profile", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

@@ -25,7 +25,9 @@ const allowedOrigins = new Set([
 app.disable("x-powered-by");
 app.set("trust proxy", 1);
 
-app.use(helmet());
+app.use(helmet({
+    contentSecurityPolicy: false
+}));
 app.use(cors({
     origin(origin, callback) {
         if (!origin || allowedOrigins.has(origin)) {
@@ -36,6 +38,7 @@ app.use(cors({
     }
 }));
 app.use(express.json({ limit: "50kb" }));
+app.use(express.static(__dirname));
 
 const authLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
@@ -255,7 +258,7 @@ app.get("/search", async (req, res) => {
 });
 
 //test route
-app.get("/", (req, res) => {
+app.get("/api/health", (req, res) => {
     res.json({ message: "Backend is working!!!" });
 });
 //test route
