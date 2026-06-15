@@ -25,7 +25,7 @@ async function loadSearchResults() {
 
     title.textContent = `Search results for "${query}"`;
 
-    const response = await fetch(`http://localhost:3001/search?query=${encodeURIComponent(query)}`);
+    const response = await fetch(`/search?query=${encodeURIComponent(query)}`);
     const matches = await response.json();
 
     resultsDiv.innerHTML = "";

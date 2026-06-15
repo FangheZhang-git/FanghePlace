@@ -8,7 +8,7 @@ document.addEventListener("click", async (e) => {
 
     try {
 
-        const res = await fetch("http://localhost:3001/toggle-save", {
+        const res = await fetch("/toggle-save", {
 
             method: "POST",
             headers: {
@@ -54,7 +54,7 @@ async function loadSavedScholarships() {
     const token = localStorage.getItem("token")
 
     const res = await fetch(
-        "http://localhost:3001/saved-scholarships",
+        "/saved-scholarships",
         {
             headers: {
                 Authorization: "Bearer " + token
@@ -121,7 +121,7 @@ async function loadSavedHearts() {
 
     if (!token) return
 
-    const res = await fetch("http://localhost:3001/saved-ids", {
+    const res = await fetch("/saved-ids", {
         headers: {
             Authorization: "Bearer " + token
         }

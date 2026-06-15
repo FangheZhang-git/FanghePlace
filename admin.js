@@ -9,7 +9,7 @@ if (!token) {
 
 async function loadScholarships() {
 
-    const res = await fetch("http://localhost:3001/admin/scholarships", {
+    const res = await fetch("/admin/scholarships", {
         headers: {
             "Authorization": "Bearer " + token
         }
@@ -70,7 +70,7 @@ async function deleteScholarship(id) {
 
     if (!confirm("Delete this scholarship?")) return;
 
-    await fetch(`http://localhost:3001/admin/scholarships/${id}`, {
+    await fetch(`/admin/scholarships/${id}`, {
         method: "DELETE",
         headers: {
             "Authorization": "Bearer " + token
@@ -84,7 +84,7 @@ async function editScholarship(id) {
 
     editingId = id;
 
-    const res = await fetch(`http://localhost:3001/admin/scholarships/${id}`, {
+    const res = await fetch(`/admin/scholarships/${id}`, {
         headers: {
             "Authorization": "Bearer " + token
         }
@@ -173,10 +173,10 @@ async function addScholarship() {
     };
 
     const url = editingSubmissionId
-        ? `http://localhost:3001/admin/submissions/${editingSubmissionId}`
+        ? `/admin/submissions/${editingSubmissionId}`
         : editingId
-        ? `http://localhost:3001/admin/scholarships/${editingId}`
-        : "http://localhost:3001/admin/scholarships";
+        ? `/admin/scholarships/${editingId}`
+        : "/admin/scholarships";
 
     const method = editingId || editingSubmissionId ? "PUT" : "POST";
 
@@ -235,7 +235,7 @@ async function loadSubmissions() {
 
     const token = localStorage.getItem("token");
 
-    const res = await fetch("http://localhost:3001/admin/submissions", {
+    const res = await fetch("/admin/submissions", {
         headers: {
             "Authorization": "Bearer " + token
         }
@@ -281,7 +281,7 @@ async function approveSubmission(id) {
 
     const token = localStorage.getItem("token");
 
-    const res = await fetch(`http://localhost:3001/admin/submissions/${id}/approve`, {
+    const res = await fetch(`/admin/submissions/${id}/approve`, {
         method: "POST",
         headers: {
             "Authorization": "Bearer " + token
@@ -301,7 +301,7 @@ async function rejectSubmission(id) {
 
     const token = localStorage.getItem("token");
 
-    const res = await fetch(`http://localhost:3001/admin/submissions/${id}/reject`, {
+    const res = await fetch(`/admin/submissions/${id}/reject`, {
         method: "POST",
         headers: {
             "Authorization": "Bearer " + token
@@ -321,7 +321,7 @@ async function editSubmission(id) {
 
     const token = localStorage.getItem("token");
 
-    const res = await fetch(`http://localhost:3001/admin/submissions/${id}`, {
+    const res = await fetch(`/admin/submissions/${id}`, {
         headers: {
             "Authorization": "Bearer " + token
         }

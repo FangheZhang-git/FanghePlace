@@ -28,7 +28,7 @@ async function loadMatches() {
         return;
     }
 
-    const response = await fetch("http://localhost:3001/match", {
+    const response = await fetch("/match", {
         headers: {
             "Authorization": "Bearer " + token
         }

@@ -2,7 +2,7 @@ async function loadMySubmissions() {
 
     const token = localStorage.getItem("token");
 
-    const res = await fetch("http://localhost:3001/my-submissions", {
+    const res = await fetch("/my-submissions", {
         headers: {
             "Authorization": "Bearer " + token
         }

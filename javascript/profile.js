@@ -14,7 +14,7 @@ async function loadDashboard() {
 
   try {
     // 1. load user profile
-    const profileResponse = await fetch("http://localhost:3001/profile", {
+    const profileResponse = await fetch("/profile", {
       headers: {
         "Authorization": "Bearer " + token
       }
@@ -69,7 +69,7 @@ async function loadUserComments(){
 
     const userId = localStorage.getItem("user_id");
 
-    const res = await fetch(`http://localhost:3001/users/${userId}/comments`);
+    const res = await fetch(`/users/${userId}/comments`);
     const comments = await res.json();
 
     const container = document.getElementById("userComments");
@@ -119,7 +119,7 @@ async function loadMySubmissions(){
 
     try{
 
-        const res = await fetch("http://localhost:3001/my-submissions",{
+        const res = await fetch("/my-submissions",{
             headers:{
                 "Authorization":"Bearer " + token
             }
