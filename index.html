@@ -4,14 +4,47 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="ScholarMatch helps high school students find scholarships that match their academic profile, background, interests, and needs.">
+  <meta name="description" content="ScholarMatch is a free scholarship matching website that helps high school students find scholarships based on academic profile, background, interests, financial need, and goals.">
   <link rel="canonical" href="https://scholarmatch.net/">
-  <title>ScholarMatch</title>
+  <meta property="og:title" content="ScholarMatch | Scholarship Finder for High School Students">
+  <meta property="og:description" content="Find scholarships that match your GPA, test scores, background, interests, financial need, and academic goals.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://scholarmatch.net/">
+  <meta property="og:image" content="https://scholarmatch.net/image/ScholarMatch.png">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="ScholarMatch | Scholarship Finder for High School Students">
+  <meta name="twitter:description" content="A free scholarship matching website for high school students.">
+  <meta name="twitter:image" content="https://scholarmatch.net/image/ScholarMatch.png">
+  <title>ScholarMatch | Scholarship Finder for High School Students</title>
   <link rel="icon" href="image/ScholarMatch.png">
   <link rel="stylesheet" href="css/header.css">
   <link rel="stylesheet" href="css/carousel.css">
   <link rel="stylesheet" href="styles.css">
   <link rel="stylesheet" href="css/index.css">
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "Organization",
+          "@id": "https://scholarmatch.net/#organization",
+          "name": "ScholarMatch",
+          "url": "https://scholarmatch.net/",
+          "logo": "https://scholarmatch.net/image/ScholarMatch.png"
+        },
+        {
+          "@type": "WebSite",
+          "@id": "https://scholarmatch.net/#website",
+          "name": "ScholarMatch",
+          "url": "https://scholarmatch.net/",
+          "description": "ScholarMatch is a free scholarship matching website for high school students.",
+          "publisher": {
+            "@id": "https://scholarmatch.net/#organization"
+          }
+        }
+      ]
+    }
+  </script>
 </head>
 
 <body>
@@ -66,9 +99,8 @@
   <!-- WELCOME words -->
 
   <main id="main">
-    <h2 id="welcome">Welcome to ScholarMatch!</h2>
-    <h3 id="mission">Our mission is to make scholarship opportunities visible, accessible, and free for every high
-      school student</h3>
+    <h2 id="welcome">Scholarship Finder for High School Students</h2>
+    <p id="mission">ScholarMatch is a free scholarship matching website that helps high school students find opportunities based on GPA, test scores, background, interests, financial need, and academic goals.</p>
     <button id="search-button">Find Scholarships That Match You</button>
   </main>
 

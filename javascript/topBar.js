@@ -45,7 +45,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (!token) {
         window.location.href = "login.html";
       } else {
-        window.location.href = "second.html";
+        window.location.href = "high-school-scholarship-matching.html";
       }
 
     });
