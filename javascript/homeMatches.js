@@ -22,19 +22,6 @@ function appendScholarshipLine(card, label, value) {
   card.appendChild(line);
 }
 
-function getSafeApplyUrl(url) {
-  try {
-    const parsedUrl = new URL(url, window.location.origin);
-    if (parsedUrl.protocol === "http:" || parsedUrl.protocol === "https:") {
-      return parsedUrl.href;
-    }
-  } catch (err) {
-    return null;
-  }
-
-  return null;
-}
-
 function createHomeMatchCard(scholarship) {
   const card = document.createElement("article");
   card.className = "matched-scholarship-card";
@@ -61,7 +48,7 @@ function createHomeMatchCard(scholarship) {
   );
   appendScholarshipLine(card, "Deadline", scholarship.deadline);
 
-  const applyUrl = getSafeApplyUrl(scholarship.apply_url);
+  const applyUrl = ScholarMatchDOM.safeHttpUrl(scholarship.apply_url);
 
   if (applyUrl) {
     const applyLink = document.createElement("a");

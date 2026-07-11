@@ -71,6 +71,24 @@ const db = mysql.createPool({
     database: process.env.DB_NAME
 });
 
+function isValidHttpUrl(value) {
+    if (value === null || value === undefined || value === "") return true;
+    if (typeof value !== "string") return false;
+
+    try {
+        const url = new URL(value.trim());
+        return Boolean(value.trim()) && (url.protocol === "http:" || url.protocol === "https:");
+    } catch (error) {
+        return false;
+    }
+}
+
+function validateApplyUrl(value) {
+    return isValidHttpUrl(value)
+        ? null
+        : "Application URL must be an absolute http:// or https:// URL";
+}
+
 
 (async () => {
     try {
@@ -131,11 +149,11 @@ function calculateScore(profile, sch) {
         return null;
     }
 
-    if (sch.state && profile.residency && sch.state !== profile.residency) {
+    if (sch.state && sch.state !== "No Restriction" && sch.state !== "any" && profile.residency && sch.state !== profile.residency) {
         return null;
     }
 
-    if (sch.major && profile.major && sch.major !== profile.major) {
+    if (sch.major && sch.major !== "No Restriction" && sch.major !== "any" && profile.major && sch.major !== profile.major) {
         return null;
     }
 
@@ -155,7 +173,7 @@ function calculateScore(profile, sch) {
         return null;
     }
 
-    if (sch.race && sch.race !== "any" && profile.race && sch.race !== profile.race) {
+    if (sch.race && sch.race !== "No Restriction" && sch.race !== "any" && profile.race && sch.race !== profile.race) {
         return null;
     }
 
@@ -523,6 +541,9 @@ app.post('/admin/scholarships', authenticateToken, requireAdmin, async (req, res
         type
     } = req.body;
 
+    const urlError = validateApplyUrl(apply_url);
+    if (urlError) return res.status(400).json({ message: urlError });
+
     await db.query(
         `INSERT INTO scholarships
     (
@@ -603,6 +624,9 @@ app.put('/admin/scholarships/:id', authenticateToken, requireAdmin, async (req, 
         race,
         type
     } = req.body;
+
+    const urlError = validateApplyUrl(apply_url);
+    if (urlError) return res.status(400).json({ message: urlError });
 
     await db.query(
         `UPDATE scholarships
@@ -835,12 +859,12 @@ app.get("/scholarships/:id/comments", async (req, res) => {
 
 
 
-// get comments written by this user
+// get comments written by the authenticated user
 
-app.get("/users/:id/comments", async (req, res) => {
+app.get("/my-comments", authenticateToken, async (req, res) => {
     try {
 
-        const userId = req.params.id;
+        const userId = req.user.id;
 
         const [comments] = await db.query(
             `SELECT 
@@ -946,6 +970,9 @@ function validateSubmittedScholarship(data) {
     if (data.min_amount === null || data.max_amount === null) {
         return "Min amount and max amount are required";
     }
+
+    const urlError = validateApplyUrl(data.apply_url);
+    if (urlError) return urlError;
 
     return null;
 }

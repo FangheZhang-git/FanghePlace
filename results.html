@@ -28,7 +28,7 @@
 
     <div id="commentsModal" class="modal">
         <div class="modal-content">
-            <span class="close" onclick="closeComments()">x</span>
+            <button type="button" class="close" data-close-comments aria-label="Close comments">x</button>
 
             <h2>Comments</h2>
 
@@ -36,13 +36,14 @@
 
             <div class="comment-input-area">
                 <textarea id="commentInput" placeholder="Write a comment..."></textarea>
-                <button onclick="submitComment()" class="comment-btn">Post Comment</button>
+                <button type="button" data-submit-comment class="comment-btn">Post Comment</button>
             </div>
         </div>
     </div>
 
 
     <script src="javascript/translate.js"></script>
+    <script src="javascript/safeDom.js"></script>
     <script src="javascript/comments.js"></script>
     <script src="javascript/results.js"></script>
     <script src="javascript/heart.js"></script>

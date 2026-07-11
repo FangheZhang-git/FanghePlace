@@ -1,67 +1,50 @@
+(function () {
 let currentScholarshipId = null;
+const { clear, recordId, textElement } = window.ScholarMatchDOM;
 
-async function openComments(id) {
+async function openComments(value) {
     const token = localStorage.getItem("token");
-
+    const id = recordId(value);
     if (!token) {
         alert("Please login first");
         return;
     }
+    if (!id) return;
+
     currentScholarshipId = id;
-
-    const res = await fetch(`/scholarships/${id}/comments`)
+    const res = await fetch(`/scholarships/${id}/comments`);
     const comments = await res.json();
-
     const container = document.getElementById("commentsContainer");
-    container.innerHTML = "";
+    clear(container);
 
-    if (comments.length === 0) {
-        container.innerHTML = `<p class="empty-comments">No comments yet. Start the conversation.</p>`;
-        document.getElementById("commentsModal").style.display = "flex";
-        return;
+    if (!Array.isArray(comments) || comments.length === 0) {
+        container.appendChild(textElement("p", "No comments yet. Start the conversation.", "empty-comments"));
+    } else {
+        comments.forEach(comment => {
+            const div = document.createElement("div");
+            div.className = "comment";
+
+            const header = document.createElement("div");
+            header.className = "comment-header";
+            header.append(
+                textElement("span", comment.username ?? "", "comment-user"),
+                textElement("span", new Date(comment.created_at).toLocaleDateString(), "comment-date")
+            );
+            div.append(header, textElement("div", comment.comment ?? "", "comment-text"));
+            container.appendChild(div);
+        });
     }
-
-    comments.forEach(c => {
-
-        const div = document.createElement("div");
-
-        const date = new Date(c.created_at).toLocaleDateString();
-
-        div.className = "comment";
-
-        div.innerHTML = `
-            <div class="comment-header">
-                <span class="comment-user">${c.username}</span>
-                <span class="comment-date">${date}</span>
-            </div>
-
-            <div class="comment-text">
-                ${c.comment}
-            </div>
-        `;
-
-        container.appendChild(div);
-
-    });
 
     document.getElementById("commentsModal").style.display = "flex";
 }
 
 async function submitComment() {
-
     const token = localStorage.getItem("token");
     const input = document.getElementById("commentInput");
     const text = input.value.trim();
-
-    if (!text) {
-        alert("Comment cannot be empty");
-        return;
-    }
-
-    if (!token) {
-        alert("Please login first");
-        return;
-    }
+    if (!text) return alert("Comment cannot be empty");
+    if (!token) return alert("Please login first");
+    if (!currentScholarshipId) return;
 
     const res = await fetch(`/scholarships/${currentScholarshipId}/comment`, {
         method: "POST",
@@ -69,23 +52,27 @@ async function submitComment() {
             "Content-Type": "application/json",
             "Authorization": "Bearer " + token
         },
-        body: JSON.stringify({
-            comment: text
-        })
+        body: JSON.stringify({ comment: text })
     });
-
     const data = await res.json();
-
-    if (!res.ok) {
-        alert(data.message || data.error || "Failed to post comment");
-        return;
-    }
+    if (!res.ok) return alert(data.message || data.error || "Failed to post comment");
 
     input.value = "";
-
     openComments(currentScholarshipId);
 }
 
 function closeComments() {
     document.getElementById("commentsModal").style.display = "none";
 }
+
+document.querySelectorAll("[data-submit-comment]").forEach(button => {
+    button.addEventListener("click", submitComment);
+});
+document.querySelectorAll("[data-close-comments]").forEach(button => {
+    button.addEventListener("click", closeComments);
+});
+
+window.openComments = openComments;
+window.submitComment = submitComment;
+window.closeComments = closeComments;
+}());

@@ -1,159 +1,107 @@
-document.addEventListener("click", async (e) => {
+(function () {
+    const dom = window.ScholarMatchDOM;
 
-    const heart = e.target.closest(".heart-icon")
-    if (!heart) return
-
-    const scholarshipId = Number(heart.dataset.id)
-    const token = localStorage.getItem("token")
-
-    try {
-
-        const res = await fetch("/toggle-save", {
-
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "Authorization": "Bearer " + token
-            },
-
-            body: JSON.stringify({
-                scholarship_id: scholarshipId
-            })
-
-        })
-
-        if (!res.ok) {
-            console.error("Save failed")
-            return
-        }
-
-        const data = await res.json()
-
-        if (data.saved) {
-            heart.classList.add("saved")
-        } else {
-            heart.classList.remove("saved")
-        }
-
-        loadSavedScholarships()
-
-    } catch (err) {
-        console.error(err)
+    function formatSavedAmount(min, max) {
+        if (!min && !max) return "Not specified";
+        if (min && max) return `$${min} - $${max}`;
+        if (min) return `$${min}+`;
+        return `$${max}`;
     }
 
-})
-function formatAmount(min, max) {
-    if (!min && !max) return "Not specified"
-    if (min && max) return `$${min} - $${max}`
-    if (min) return `$${min}+`
-    return `$${max}`
-}
+    document.addEventListener("click", async event => {
+        const heart = event.target.closest(".heart-icon");
+        if (!heart) return;
 
-async function loadSavedScholarships() {
+        const scholarshipId = dom.recordId(heart.dataset.id);
+        const token = localStorage.getItem("token");
+        if (!scholarshipId || !token) return;
 
-    const token = localStorage.getItem("token")
+        try {
+            const res = await fetch("/toggle-save", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": "Bearer " + token
+                },
+                body: JSON.stringify({ scholarship_id: scholarshipId })
+            });
+            if (!res.ok) return console.error("Save failed");
 
-    const res = await fetch(
-        "/saved-scholarships",
-        {
-            headers: {
-                Authorization: "Bearer " + token
-            }
+            const data = await res.json();
+            heart.classList.toggle("saved", Boolean(data.saved));
+            loadSavedScholarships();
+        } catch (err) {
+            console.error(err);
         }
-    )
+    });
 
-    const scholarships = await res.json()
+    function createSavedCard(scholarship) {
+        const card = document.createElement("div");
+        card.className = "scholarship-card";
 
-    console.log(scholarships)
+        const heart = dom.heartIcon(scholarship.id);
+        if (heart) card.appendChild(heart);
+        card.appendChild(dom.textElement("h3", scholarship.name ?? ""));
 
-    const container =
-        document.getElementById("savedScholarships")
+        const id = dom.recordId(scholarship.id);
+        if (id) {
+            const commentsButton = dom.textElement("button", "Check Comments", "comment");
+            commentsButton.type = "button";
+            commentsButton.addEventListener("click", () => window.openComments(id));
+            card.appendChild(commentsButton);
+        }
 
-    if (!container) return
+        card.appendChild(dom.textElement("p", scholarship.description ?? ""));
+        card.appendChild(dom.labeledLine("Award", formatSavedAmount(scholarship.min_amount, scholarship.max_amount)));
+        card.appendChild(dom.labeledLine("Deadline", scholarship.deadline));
 
-    container.innerHTML = ""
-
-
-    if (scholarships.length === 0) {
-        container.innerHTML = `
-        <p class="empty-message"> No saved scholarships yet </p>
-        `
-        return
+        const link = dom.applyLink(scholarship.apply_url);
+        if (link) card.appendChild(link);
+        return card;
     }
 
-    scholarships.forEach(s => {
+    async function loadSavedScholarships() {
+        const container = document.getElementById("savedScholarships");
+        const token = localStorage.getItem("token");
+        if (!container || !token) return;
 
-        const card = document.createElement("div")
+        const res = await fetch("/saved-scholarships", {
+            headers: { "Authorization": "Bearer " + token }
+        });
+        const scholarships = await res.json();
+        dom.clear(container);
 
-        card.className = "scholarship-card"
-
-        card.innerHTML = `
-            <svg class="heart-icon" data-id="${s.id}" xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960">
-                <path d="m480-120-58-52q-101-91-167-157T150-447.5Q111-500 95.5-544T80-634q0-94 63-157t157-63q52 0 99 22t81 62q34-40 81-62t99-22q94 0 157 63t63 157q0 46-15.5 90T810-447.5Q771-395 705-329T538-172l-58 52Zm0-108q96-86 158-147.5t98-107q36-45.5 50-81t14-70.5q0-60-40-100t-100-40q-47 0-87 26.5T518-680h-76q-15-41-55-67.5T300-774q-60 0-100 40t-40 100q0 35 14 70.5t50 81q36 45.5 98 107T480-228Zm0-273Z"/>
-            </svg>
-            <h3>${s.name}</h3>
-            <button class="comment" onclick="openComments(${s.id})">
-                Check Comments
-            </button>
-            <p>${s.description}</p>
-            <p><strong>Award:</strong> ${formatAmount(s.min_amount, s.max_amount)}</p>
-            <p><strong>Deadline:</strong> ${s.deadline || "Not specified"}</p>
-                    ${s.apply_url
-            ? `<a href="${s.apply_url}" target="_blank" class="apply-right-now">
-                     Apply Now →
-                   </a>`
-            : ""
+        if (!Array.isArray(scholarships) || scholarships.length === 0) {
+            container.appendChild(dom.textElement("p", "No saved scholarships yet", "empty-message"));
+            return;
         }
-        `
 
-        container.appendChild(card)
-
-    })
-
-    loadSavedHearts()
-
-}
-
-
-async function loadSavedHearts() {
-
-    const token = localStorage.getItem("token")
-
-    if (!token) return
-
-    const res = await fetch("/saved-ids", {
-        headers: {
-            Authorization: "Bearer " + token
-        }
-    })
-
-    const data = await res.json()
-
-    const savedSet = new Set(
-        data.map(x => x.scholarship_id)
-    )
-
-    document.querySelectorAll(".heart-icon")
-        .forEach(heart => {
-
-            const id = Number(heart.dataset.id)
-
-            if (savedSet.has(id)) {
-                heart.classList.add("saved")
-            }
-
-        })
-
-}
-
-
-document.addEventListener("DOMContentLoaded", () => {
-
-    loadSavedHearts()
-
-    if (document.getElementById("savedScholarships")) {
-        loadSavedScholarships()
+        scholarships.forEach(scholarship => container.appendChild(createSavedCard(scholarship)));
+        loadSavedHearts();
     }
 
-})
+    async function loadSavedHearts() {
+        const token = localStorage.getItem("token");
+        if (!token) return;
 
+        const res = await fetch("/saved-ids", {
+            headers: { "Authorization": "Bearer " + token }
+        });
+        const data = await res.json();
+        if (!Array.isArray(data)) return;
+
+        const savedSet = new Set(data.map(item => dom.recordId(item.scholarship_id)).filter(Boolean));
+        document.querySelectorAll(".heart-icon").forEach(heart => {
+            const id = dom.recordId(heart.dataset.id);
+            heart.classList.toggle("saved", Boolean(id && savedSet.has(id)));
+        });
+    }
+
+    window.loadSavedScholarships = loadSavedScholarships;
+    window.loadSavedHearts = loadSavedHearts;
+
+    document.addEventListener("DOMContentLoaded", () => {
+        loadSavedHearts();
+        if (document.getElementById("savedScholarships")) loadSavedScholarships();
+    });
+}());

@@ -1,177 +1,139 @@
-const welcomeText = document.getElementById("welcomeText");
-const personalInfoContainer = document.getElementById("personalInfo");
-const savedScholarshipsContainer = document.getElementById("savedScholarships");
-const commentsContainer = document.getElementById("commentsContainer");
+(function () {
+    const dom = window.ScholarMatchDOM;
+    const welcomeText = document.getElementById("welcomeText");
+    const personalInfoContainer = document.getElementById("personalInfo");
 
-async function loadDashboard() {
-  const token = localStorage.getItem("token");
-
-  if (!token) {
-    alert("Please log in first.");
-    window.location.href = "login.html";
-    return;
-  }
-
-  try {
-    // 1. load user profile
-    const profileResponse = await fetch("/profile", {
-      headers: {
-        "Authorization": "Bearer " + token
-      }
-    });
-
-    const profileData = await profileResponse.json();
-    console.log(profileData);
-
-    if (!profileResponse.ok) {
-      personalInfoContainer.innerHTML = `<p>${profileData.message || "Failed to load profile."}</p>`;
-    } else {
-      welcomeText.innerText = `Welcome, ${profileData.first_name}`;
-
-      personalInfoContainer.innerHTML = `
-        <p><strong>First Name:</strong> ${profileData.first_name || "Not provided"}</p>
-        <p><strong>Last Name:</strong> ${profileData.last_name || "Not provided"}</p>
-        <p><strong>Email:</strong> ${profileData.email || "Not provided"}</p>
-        <p><strong>Unweighted GPA:</strong> ${profileData.gpa || "Not provided"}</p>
-        <p><strong>SAT Score:</strong> ${profileData.sat || "Not provided"}</p>
-        <p><strong>ACT Score:</strong> ${profileData.act || "Not provided"}</p>
-        <p><strong>Citizenship Status:</strong> ${profileData.citizenship || "Not provided"}</p>
-        <p><strong>Gender:</strong> ${profileData.gender || "Not provided"}</p>
-        <p><strong>Race:</strong> ${profileData.race || "Not provided"}</p>
-        <p><strong>Intended Major:</strong> ${profileData.major || "Not provided"}</p>
-        <p><strong>Number of AP Classes Taken:</strong> ${profileData.ap_count || "Not provided"}</p>
-        <p><strong>Number of AP scores 4 or 5:</strong> ${profileData.ap_high_scores || "Not provided"}</p>
-        <p><strong>Number of Honor Classes Taken:</strong> ${profileData.honors_count || "Not provided"}</p>
-        <p><strong>Number of Dual Enrollment Classes Taken:</strong> ${profileData.dual_enrollment_count || "Not provided"}</p>
-        <p><strong>First Generation College Student?:</strong> ${profileData.first_gen ? "Yes" : "No" || "Not provided"}</p>
-        <p><strong>Leadership Role:</strong> ${profileData.leadership ? "Yes" : "No"|| "Not provided"}</p>
-        <p><strong>Household Income Range:</strong> ${profileData.income || "Not provided"}</p>
-        <p><strong>Household Size:</strong> ${profileData.household_size || "Not provided"}</p>
-        <p><strong>State or National Award:</strong> ${profileData.award ? "Yes" : "No" || "Not provided"}</p>
-        <p><strong>Willing to Write Essays?:</strong> ${profileData.willing_essay ? "Yes" : "No" || "Not provided"}</p>
-
-
-      `;
+    function profileValue(value) {
+        return value === null || value === undefined || value === "" ? "Not provided" : String(value);
     }
 
-    
-
-
-  } catch (error) {
-    console.error("Dashboard loading error:", error);
-    personalInfoContainer.innerHTML = `<p>Something went wrong while loading the dashboard.</p>`;
-    savedScholarshipsContainer.innerHTML = "";
-    commentsContainer.innerHTML = "";
-  }
-}
-
-async function loadUserComments(){
-
-    const userId = localStorage.getItem("user_id");
-
-    const res = await fetch(`/users/${userId}/comments`);
-    const comments = await res.json();
-
-    const container = document.getElementById("userComments");
-
-    container.innerHTML = "";
-
-    if(comments.length === 0){
-        container.innerHTML = "<p>No comments yet</p>";
-        return;
+    function yesNo(value) {
+        if (value === null || value === undefined || value === "") return "Not provided";
+        return value === true || value === 1 || value === "1" ? "Yes" : "No";
     }
 
-    comments.forEach(c => {
-
-        const date = new Date(c.created_at).toLocaleDateString();
-
-        const div = document.createElement("div");
-
-        div.className = "user-comment-card";
-
-        div.innerHTML = `
-            <div class="comment-scholarship">
-                ${c.scholarship_name}
-            </div>
-
-            <div class="comment-text">
-                ${c.comment}
-            </div>
-
-            <div class="comment-date">
-                ${date}
-            </div>
-        `;
-
-        container.appendChild(div);
-
-    });
-
-}
-
-
-
-async function loadMySubmissions(){
-
-    const token = localStorage.getItem("token");
-
-    if(!token) return;
-
-    try{
-
-        const res = await fetch("/my-submissions",{
-            headers:{
-                "Authorization":"Bearer " + token
-            }
-        });
-
-        const submissions = await res.json();
-
-        const container = document.getElementById("mySubmissions");
-
-        if(!container) return;
-
-        container.innerHTML = "";
-
-        if(submissions.length === 0){
-
-            container.innerHTML =
-            `<p class="no-submissions">You haven't submitted any scholarships yet.</p>`;
-
+    async function loadDashboard() {
+        const token = localStorage.getItem("token");
+        if (!token) {
+            alert("Please log in first.");
+            window.location.href = "login.html";
             return;
         }
 
-        submissions.forEach(sub => {
+        try {
+            const response = await fetch("/profile", {
+                headers: { "Authorization": "Bearer " + token }
+            });
+            const profile = await response.json();
+            dom.clear(personalInfoContainer);
 
-            const statusColor =
-                sub.status === "approved" ? "green" :
-                sub.status === "rejected" ? "red" :
-                "orange";
+            if (!response.ok) {
+                personalInfoContainer.appendChild(dom.textElement("p", profile.message || "Failed to load profile."));
+                return;
+            }
 
-            const card = document.createElement("div");
+            welcomeText.textContent = `Welcome, ${profile.first_name ?? ""}`;
+            const fields = [
+                ["First Name", profile.first_name], ["Last Name", profile.last_name],
+                ["Email", profile.email], ["Unweighted GPA", profile.gpa],
+                ["SAT Score", profile.sat], ["ACT Score", profile.act],
+                ["Citizenship Status", profile.citizenship], ["Gender", profile.gender],
+                ["Race", profile.race], ["Intended Major", profile.major],
+                ["Number of AP Classes Taken", profile.ap_count],
+                ["Number of AP scores 4 or 5", profile.ap_high_scores],
+                ["Number of Honor Classes Taken", profile.honors_count],
+                ["Number of Dual Enrollment Classes Taken", profile.dual_enrollment_count],
+                ["First Generation College Student?", yesNo(profile.first_gen)],
+                ["Leadership Role", yesNo(profile.leadership)],
+                ["Household Income Range", profile.income], ["Household Size", profile.household_size],
+                ["State or National Award", yesNo(profile.award)],
+                ["Willing to Write Essays?", yesNo(profile.willing_essay)]
+            ];
+            fields.forEach(([label, value]) => {
+                personalInfoContainer.appendChild(dom.labeledLine(label, profileValue(value), "Not provided"));
+            });
+        } catch (error) {
+            dom.clear(personalInfoContainer);
+            personalInfoContainer.appendChild(dom.textElement("p", "Something went wrong while loading the dashboard."));
+        }
+    }
 
-            card.className = "submission-card";
+    async function loadUserComments() {
+        const token = localStorage.getItem("token");
+        const container = document.getElementById("userComments");
+        if (!token || !container) return;
 
-            card.innerHTML = `
-                <div class="submission-name">${sub.name}</div>
-                <div class="submission-status" style="color:${statusColor}">
-                    Status: ${sub.status}
-                </div>
-            `;
+        try {
+            const res = await fetch("/my-comments", {
+                headers: { "Authorization": "Bearer " + token }
+            });
 
-            container.appendChild(card);
+            if (!res.ok) {
+                dom.clear(container);
+                const message = res.status === 401 || res.status === 403
+                    ? "Your session has expired. Please log in again."
+                    : "Failed to load your comments. Please try again later.";
+                container.appendChild(dom.textElement("p", message));
+                return;
+            }
 
+            const comments = await res.json();
+            if (!Array.isArray(comments)) {
+                throw new Error("Invalid comments response");
+            }
+
+            dom.clear(container);
+            if (comments.length === 0) {
+                container.appendChild(dom.textElement("p", "No comments yet"));
+                return;
+            }
+
+            comments.forEach(comment => {
+                const card = document.createElement("div");
+                card.className = "user-comment-card";
+                card.append(
+                    dom.textElement("div", comment.scholarship_name ?? "", "comment-scholarship"),
+                    dom.textElement("div", comment.comment ?? "", "comment-text"),
+                    dom.textElement("div", new Date(comment.created_at).toLocaleDateString(), "comment-date")
+                );
+                container.appendChild(card);
+            });
+        } catch (error) {
+            console.error("Failed to load comments", error);
+            dom.clear(container);
+            container.appendChild(dom.textElement("p", "Failed to load your comments. Please try again later."));
+        }
+    }
+
+    async function loadMySubmissions() {
+        const token = localStorage.getItem("token");
+        const container = document.getElementById("mySubmissions");
+        if (!token || !container) return;
+
+        const res = await fetch("/my-submissions", {
+            headers: { "Authorization": "Bearer " + token }
         });
+        const submissions = await res.json();
+        dom.clear(container);
 
+        if (!Array.isArray(submissions) || submissions.length === 0) {
+            container.appendChild(dom.textElement("p", "You haven't submitted any scholarships yet.", "no-submissions"));
+            return;
+        }
+
+        submissions.forEach(submission => {
+            const card = document.createElement("div");
+            card.className = "submission-card";
+            card.appendChild(dom.textElement("div", submission.name ?? "", "submission-name"));
+            const status = dom.textElement("div", `Status: ${submission.status ?? ""}`, "submission-status");
+            const statusColors = { approved: "green", rejected: "red", pending: "orange" };
+            status.style.color = statusColors[submission.status] || "orange";
+            card.appendChild(status);
+            container.appendChild(card);
+        });
     }
-    catch(err){
-        console.error("Failed to load submissions", err);
-    }
 
-}
-
-loadDashboard();
-
-loadUserComments();
-
-loadMySubmissions();
+    loadDashboard();
+    loadUserComments();
+    loadMySubmissions();
+}());

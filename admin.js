@@ -23,45 +23,40 @@ async function loadScholarships() {
     const data = await res.json();
 
     const tbody = document.querySelector("#schTable tbody");
-    tbody.innerHTML = "";
+    ScholarMatchDOM.clear(tbody);
 
     data.forEach(sch => {
+        const row = document.createElement("tr");
+        const amount = `${sch.min_amount ?? ""}${sch.max_amount ? " - " + sch.max_amount : ""}`;
+        const values = [
+            sch.id, sch.name, sch.provider, amount, sch.min_gpa, sch.min_sat,
+            sch.min_act, sch.major, sch.citizenship, sch.state, sch.requires_essay,
+            sch.first_gen_only, sch.leadership, sch.award, sch.min_income,
+            sch.max_income, sch.renewable, sch.advanced_coursework_preferred,
+            sch.race, sch.deadline, sch.type
+        ];
+        values.forEach(value => row.appendChild(ScholarMatchDOM.textElement("td", value ?? "")));
 
-        const row = `
-        <tr>
-            <td>${sch.id ?? ""}</td>
-            <td>${sch.name ?? ""}</td>
-            <td>${sch.provider ?? ""}</td>
-            <td>${sch.min_amount ?? ""}${sch.max_amount ? " - " + sch.max_amount : ""}</td>
-            <td>${sch.min_gpa ?? ""}</td>
-            <td>${sch.min_sat ?? ""}</td>
-            <td>${sch.min_act ?? ""}</td>
-            <td>${sch.major ?? ""}</td>
-            <td>${sch.citizenship ?? ""}</td>
-            <td>${sch.state ?? ""}</td>
-            <td>${sch.requires_essay ?? ""}</td>
-            <td>${sch.first_gen_only ?? ""}</td>
-            <td>${sch.leadership ?? ""}</td>
-            <td>${sch.award ?? ""}</td>
-            <td>${sch.min_income ?? ""}</td>
-            <td>${sch.max_income ?? ""}</td>
-            <td>${sch.renewable ?? ""}</td>
-            <td>${sch.advanced_coursework_preferred ?? ""}</td>
-            <td>${sch.race ?? ""}</td>
-            <td>${sch.deadline ?? ""}</td>
-            <td>${sch.type ?? ""}</td>
-            <td>${sch.apply_url ? `<a href="${sch.apply_url}" target="_blank">Link</a>` : ""}</td>
-            <td>${sch.description ?? ""}</td>
-            <td>${sch.created_at ?? ""}</td>
-            <td class="action-cell">
-                <button class="edit-btn" onclick="editScholarship(${sch.id})">Edit</button>
-                <button class="delete-btn" onclick="deleteScholarship(${sch.id})">Delete</button>
-            </td>
-        </tr>
-        `;
+        const linkCell = document.createElement("td");
+        const link = ScholarMatchDOM.applyLink(sch.apply_url, "", "Link");
+        if (link) linkCell.appendChild(link);
+        row.appendChild(linkCell);
+        row.appendChild(ScholarMatchDOM.textElement("td", sch.description ?? ""));
+        row.appendChild(ScholarMatchDOM.textElement("td", sch.created_at ?? ""));
 
-        tbody.insertAdjacentHTML("beforeend", row);
-
+        const actions = document.createElement("td");
+        actions.className = "action-cell";
+        const id = ScholarMatchDOM.recordId(sch.id);
+        if (id) {
+            const editButton = ScholarMatchDOM.textElement("button", "Edit", "edit-btn");
+            const deleteButton = ScholarMatchDOM.textElement("button", "Delete", "delete-btn");
+            editButton.type = deleteButton.type = "button";
+            editButton.addEventListener("click", () => editScholarship(id));
+            deleteButton.addEventListener("click", () => deleteScholarship(id));
+            actions.append(editButton, deleteButton);
+        }
+        row.appendChild(actions);
+        tbody.appendChild(row);
     });
 }
 
@@ -246,30 +241,38 @@ async function loadSubmissions() {
     const container = document.getElementById("submissionsContainer");
 
     if (submissions.length === 0) {
-        container.innerHTML = "No pending submissions.";
+        container.textContent = "No pending submissions.";
         return;
     }
 
-    container.innerHTML = "";
+    ScholarMatchDOM.clear(container);
 
     submissions.forEach(sub => {
 
         const card = document.createElement("div");
         card.className = "submission-card";
 
-        card.innerHTML = `
-            <h3>${sub.name}</h3>
-            <p><strong>Provider:</strong> ${sub.provider || "-"}</p>
-            <p><strong>Submitted by:</strong> ${sub.user_email}</p>
-            <p><strong>Amount:</strong> ${sub.min_amount || "-"} - ${sub.max_amount || "-"}</p>
-            <p><strong>Deadline:</strong> ${sub.deadline || "-"}</p>
+        card.append(
+            ScholarMatchDOM.textElement("h3", sub.name ?? ""),
+            ScholarMatchDOM.labeledLine("Provider", sub.provider || "-", "-"),
+            ScholarMatchDOM.labeledLine("Submitted by", sub.user_email || "-", "-"),
+            ScholarMatchDOM.labeledLine("Amount", `${sub.min_amount || "-"} - ${sub.max_amount || "-"}`, "-"),
+            ScholarMatchDOM.labeledLine("Deadline", sub.deadline || "-", "-")
+        );
 
-            <div class="admin-actions">
-                <button onclick="approveSubmission(${sub.id})">Approve</button>
-                <button onclick="editSubmission(${sub.id})">Edit</button>
-                <button onclick="rejectSubmission(${sub.id})">Reject</button>
-            </div>
-        `;
+        const actions = document.createElement("div");
+        actions.className = "admin-actions";
+        const id = ScholarMatchDOM.recordId(sub.id);
+        if (id) {
+            [["Approve", approveSubmission], ["Edit", editSubmission], ["Reject", rejectSubmission]]
+                .forEach(([label, handler]) => {
+                    const button = ScholarMatchDOM.textElement("button", label);
+                    button.type = "button";
+                    button.addEventListener("click", () => handler(id));
+                    actions.appendChild(button);
+                });
+        }
+        card.appendChild(actions);
 
         container.appendChild(card);
 

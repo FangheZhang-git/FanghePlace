@@ -4,6 +4,10 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "crawl:scholarships": "node crawler/src/run-scholarship-crawler.js",
+    "crawl:scholarships:dry-run": "node crawler/src/run-scholarship-crawler.js --dry-run",
+    "crawl:scholarships:review": "node crawler/src/generate-review-report.js",
+    "crawl:scholarships:static": "node crawler/src/run-scholarship-crawler.js --static",
     "start": "node server.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -22,11 +26,13 @@
   "dependencies": {
     "bcrypt": "^6.0.0",
     "cors": "^2.8.6",
+    "crawlee": "^3.17.0",
     "dotenv": "^17.3.0",
     "express": "^5.2.1",
     "express-rate-limit": "^8.5.2",
     "helmet": "^8.2.0",
     "jsonwebtoken": "^9.0.3",
-    "mysql2": "^3.17.0"
+    "mysql2": "^3.17.0",
+    "playwright": "^1.61.1"
   }
 }
