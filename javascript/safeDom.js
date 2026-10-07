@@ -64,7 +64,45 @@
         return svg;
     }
 
+    function cycleLabel(scholarship) {
+        const r = scholarship.research;
+        if (!r) return '';
+        const today = new Date().toISOString().slice(0, 10);
+        if (r.stale) return 'Research needs rechecking after an edit';
+        if (r.cycle_status === 'closed' || (r.closes_on && r.closes_on < today)) return 'Closed — next cycle not confirmed';
+        if (r.opens_on && r.opens_on > today) return 'Opens ' + r.opens_on;
+        // A month-only opening must not turn into a fabricated exact date.
+        if (r.cycle_status === 'upcoming' && !r.opens_on) return 'Upcoming — confirm dates with provider';
+        if (r.cycle_status === 'upcoming' && !r.closes_on) return 'Confirm current application window';
+        return 'Published deadline: ' + (scholarship.deadline || 'Check local/provider dates');
+    }
+
+    function academicValue(value) {
+        if (value === null || value === undefined || value === '') return 'Not published';
+        return Number(value) === 0 ? 'No minimum / not considered' : String(Number(value));
+    }
+
+    function appendResearch(card, scholarship) {
+        if (!scholarship.research) return;
+        const block = textElement('div', '', 'scholarship-research-summary');
+        block.appendChild(textElement('p', cycleLabel(scholarship), 'research-status'));
+        block.appendChild(labeledLine('GPA minimum', academicValue(scholarship.min_gpa)));
+        block.appendChild(labeledLine('SAT minimum', academicValue(scholarship.min_sat)));
+        block.appendChild(labeledLine('ACT minimum', academicValue(scholarship.min_act)));
+        block.appendChild(textElement('p', 'Eligibility needs confirmation. Check age, enrollment and any special conditions.'));
+        const id = recordId(scholarship.id);
+        if (id) {
+            const link = textElement('a', 'Requirements, sources & applicant experiences', 'research-detail-link');
+            link.href = 'scholarship.html?id=' + id;
+            block.appendChild(link);
+        }
+        card.appendChild(block);
+    }
+
     window.ScholarMatchDOM = {
+        academicValue,
+        appendResearch,
+        cycleLabel,
         applyLink,
         clear,
         heartIcon,

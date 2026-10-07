@@ -51,14 +51,14 @@
   background: #fff;
   padding: clamp(1rem, 4vw, 1.5625rem);
   margin-bottom: 1.5625rem;
-  border-radius: 0.5rem;
+  border-radius: 0.75rem;
   box-shadow: -0.75rem 0.75rem 0.35rem rgba(0, 0, 0, 0.1);
   overflow-wrap: anywhere;
 }
 
 .matched-scholarship-card h3 {
   margin-bottom: 0.5rem;
-  padding-right: 5rem;
+  padding-right: 3rem;
 }
 
 .matched-scholarship-card p {
@@ -66,16 +66,18 @@
   line-height: 1.45;
 }
 
-.match-score {
-  position: absolute;
-  top: 1rem;
-  right: 1rem;
-  padding: 0.35rem 0.65rem;
-  background: #eef2ff;
-  color: #0000ff;
-  border-radius: 0.5rem;
-  font-weight: 700;
-  font-size: 0.85rem;
+.matched-scholarship-card .commentButton {
+  margin: 0.7rem 0 1.15rem;
+  color: #fff;
+  background: #2563eb;
+  border-color: #2563eb;
+  box-shadow: 0 6px 14px rgba(37, 99, 235, 0.2);
+}
+
+.matched-scholarship-card .commentButton:hover {
+  color: #fff;
+  background: #1d4ed8;
+  border-color: #1d4ed8;
 }
 
 .home-apply-link {
@@ -92,19 +94,6 @@
 .home-apply-link:hover {
   color: #fff;
 }
-
-@media (max-width: 640px) {
-  .matched-scholarship-card h3 {
-    padding-right: 0;
-  }
-
-  .match-score {
-    position: static;
-    display: inline-block;
-    margin-bottom: 0.75rem;
-  }
-}
-
 
 a{
   text-decoration:none;

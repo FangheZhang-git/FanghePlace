@@ -23,15 +23,16 @@ function showScholarship(scholarship) {
     if (id) {
         const commentsButton = textElement("button", "Check Comments", "commentButton");
         commentsButton.type = "button";
-        commentsButton.addEventListener("click", () => openComments(id));
+        commentsButton.addEventListener("click", () => window.openComments(id));
         card.appendChild(commentsButton);
     }
 
-    card.appendChild(textElement("p", scholarship.description ?? ""));
+    card.appendChild(textElement("p", scholarship.description ?? "", "scholarship-description"));
+    card.appendChild(labeledLine("Provider", scholarship.provider));
     card.appendChild(labeledLine("Award", formatAmount(scholarship.min_amount, scholarship.max_amount)));
     card.appendChild(labeledLine("Deadline", scholarship.deadline));
 
-    const link = applyLink(scholarship.apply_url);
+    const link = applyLink(scholarship.apply_url, "apply-right-now", "Apply Now");
     if (link) card.appendChild(link);
     resultsDiv.appendChild(card);
 }
@@ -53,6 +54,7 @@ async function loadSearchResults() {
     }
 
     matches.forEach(showScholarship);
+    if (typeof loadSavedHearts === "function") loadSavedHearts();
 }
 
 loadSearchResults();

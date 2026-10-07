@@ -45,7 +45,7 @@
 
         const id = dom.recordId(scholarship.id);
         if (id) {
-            const commentsButton = dom.textElement("button", "Check Comments", "comment");
+            const commentsButton = dom.textElement("button", "Check Comments", "commentButton");
             commentsButton.type = "button";
             commentsButton.addEventListener("click", () => window.openComments(id));
             card.appendChild(commentsButton);
@@ -55,7 +55,8 @@
         card.appendChild(dom.labeledLine("Award", formatSavedAmount(scholarship.min_amount, scholarship.max_amount)));
         card.appendChild(dom.labeledLine("Deadline", scholarship.deadline));
 
-        const link = dom.applyLink(scholarship.apply_url);
+        dom.appendResearch(card, scholarship);
+        const link = dom.applyLink(scholarship.apply_url, 'apply-right-now', scholarship.research ? 'Visit provider →' : 'Apply Now →');
         if (link) card.appendChild(link);
         return card;
     }

@@ -2,12 +2,6 @@
 const container = document.getElementById("scholarshipResults");
 const { applyLink, clear, heartIcon, labeledLine, recordId, textElement } = window.ScholarMatchDOM;
 
-function getTag(score) {
-    if (score >= 85) return "strongly recommended";
-    if (score >= 70) return "recommended";
-    return null;
-}
-
 function formatAmount(minAmount, maxAmount) {
     if (minAmount && maxAmount) return `$${minAmount} - $${maxAmount}`;
     if (minAmount) return `$${minAmount}`;
@@ -21,31 +15,24 @@ function createMatchCard(scholarship) {
 
     const heart = heartIcon(scholarship.id);
     if (heart) card.appendChild(heart);
-
     card.appendChild(textElement("h3", scholarship.name ?? ""));
 
     const id = recordId(scholarship.id);
     if (id) {
-        const commentsButton = textElement("button", "View Comments", "commentButton");
+        const commentsButton = textElement("button", "Check Comments", "commentButton");
         commentsButton.type = "button";
-        commentsButton.addEventListener("click", () => openComments(id));
+        commentsButton.addEventListener("click", () => window.openComments(id));
         card.appendChild(commentsButton);
     }
 
-    card.appendChild(textElement("p", scholarship.description ?? ""));
+    card.appendChild(textElement("p", scholarship.description ?? "", "scholarship-description"));
+    card.appendChild(labeledLine("Provider", scholarship.provider));
     card.appendChild(labeledLine("Award", formatAmount(scholarship.min_amount, scholarship.max_amount)));
     card.appendChild(labeledLine("Deadline", scholarship.deadline));
     card.appendChild(labeledLine("Match Score", String(Math.round(Number(scholarship.score) || 0))));
 
-    const link = applyLink(scholarship.apply_url);
+    const link = applyLink(scholarship.apply_url, "apply-right-now", "Apply Now");
     if (link) card.appendChild(link);
-
-    const tag = getTag(scholarship.score);
-    if (tag === "strongly recommended") {
-        card.appendChild(textElement("span", "Strongly Recommended", "tag strong"));
-    } else if (tag === "recommended") {
-        card.appendChild(textElement("span", "Recommended", "tag recommended"));
-    }
 
     return card;
 }

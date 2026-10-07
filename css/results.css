@@ -17,9 +17,35 @@ h2 {
   overflow-wrap: anywhere;
 }
 
+.scholarship-description {
+  margin: 0.8rem 0 1rem;
+}
+
+.scholarship-card > p {
+  margin: 0.55rem 0;
+}
+
+.scholarship-card .apply-right-now {
+  margin-top: 1rem;
+}
 
 h3 {
   margin-bottom: 5px;
+  padding-right: 3rem;
+}
+
+.scholarship-card .commentButton {
+  margin: 0.7rem 0 1.15rem;
+  color: #fff;
+  background: #2563eb;
+  border-color: #2563eb;
+  box-shadow: 0 6px 14px rgba(37, 99, 235, 0.2);
+}
+
+.scholarship-card .commentButton:hover {
+  color: #fff;
+  background: #1d4ed8;
+  border-color: #1d4ed8;
 }
 
 .heart-icon {

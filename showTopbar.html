@@ -24,25 +24,26 @@
         <div id="results"></div>
     </div>
 
-    <div id="commentsModal" class="modal" >
-
-        <div class="modal-content">
-
-            <button type="button" class="close" data-close-comments aria-label="Close comments">x</button>
-
-            <h2>Comments</h2>
-
-            <div id="commentsContainer"></div>
-
-
-            <div class="comment-input-area">
-            <textarea id="commentInput" placeholder="Write a comment..."></textarea>
-
-            <button type="button" data-submit-comment class="comment-btn">Post Comment</button>
+    <div id="commentsModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="commentsTitle">
+        <div class="modal-content" tabindex="-1">
+            <div class="comments-modal-header">
+                <div>
+                    <p class="comments-eyebrow">ScholarMatch community</p>
+                    <h2 id="commentsTitle">Student comments</h2>
+                    <p id="commentsSummary" class="comments-summary">Read helpful notes from other students.</p>
+                </div>
+                <button type="button" class="close" data-close-comments aria-label="Close comments">&times;</button>
             </div>
-
+            <div id="commentsContainer" aria-live="polite"></div>
+            <div class="comment-input-area">
+                <label for="commentInput">Share something helpful</label>
+                <textarea id="commentInput" maxlength="1000" placeholder="Add application tips, deadline updates, or your experience..."></textarea>
+                <div class="comment-composer-footer">
+                    <span id="commentFeedback" class="comment-feedback" aria-live="polite">Be respectful and keep personal information private.</span>
+                    <button type="button" data-submit-comment class="comment-btn">Post comment</button>
+                </div>
+            </div>
         </div>
-
     </div>
 
 

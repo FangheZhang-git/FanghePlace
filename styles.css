@@ -66,6 +66,25 @@ a{
     background-color: #1e40af;
 }
 
+.heart-icon {
+  position: absolute;
+  top: 0.9375rem;
+  right: 0.9375rem;
+  width: 1.625rem;
+  height: 1.625rem;
+  cursor: pointer;
+  fill: #888;
+  transition: transform 0.2s ease, fill 0.2s ease;
+}
+
+.heart-icon.saved {
+  fill: #e63946;
+}
+
+.heart-icon:hover {
+  transform: scale(1.15);
+}
+
 .outside {
   width: min(100% - 2rem, 62.5rem);
   margin: clamp(1.5rem, 5vw, 3.125rem) auto;
@@ -73,3 +92,18 @@ a{
 #results-title{
   padding: 0 0 15px 0;
 }
+/* Researched scholarship views; shared with result and saved cards. */
+.scholarship-research-summary { border-top: 1px solid #d9e2eb; margin-top: 1rem; padding-top: .75rem; }
+.scholarship-research-summary p { margin: .35rem 0; }
+.research-status { color: #715017; background: #fff5dd; padding: .65rem .8rem; border-radius: .4rem; }
+.research-page { line-height: 1.65; }
+.research-page input[type="search"] { display: block; box-sizing: border-box; width: 100%; padding: .8rem; margin: .6rem 0; border: 1px solid #73869a; border-radius: .4rem; font: inherit; }
+.research-page h3 { margin-top: 1.5rem; }
+.research-page ul { padding-left: 1.5rem; }
+.research-page li { margin: .5rem 0; }
+.research-page table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+.research-page th, .research-page td { text-align: left; padding: .5rem; border-bottom: 1px solid #d9e2eb; }
+.research-page details { margin: 1.5rem 0; }
+.research-provider-link, .research-detail-link { display: inline-block; margin: .5rem 0; font-weight: bold; }
+.research-page a, .research-detail-link { color: #174f7b; overflow-wrap: anywhere; }
+.research-page a:focus-visible, .research-detail-link:focus-visible { outline: 3px solid #237bad; outline-offset: 3px; }
