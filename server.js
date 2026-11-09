@@ -6,6 +6,8 @@ const helmet = require("helmet");
 const rateLimit = require("express-rate-limit");
 const jwt = require('jsonwebtoken');
 
+const { securityConfig, publicFiles, scalarBody, validateAuth, accountLimiter, captcha } = require('./security');
+const security = securityConfig();
 const JWT_SECRET = process.env.JWT_SECRET;
 
 const app = express();
@@ -23,7 +25,8 @@ const allowedOrigins = new Set([
 ]);
 
 app.disable("x-powered-by");
-app.set("trust proxy", 1);
+// Explicit proxy trust; hop counts require a deployment with no direct ingress bypass.
+app.set("trust proxy", security.trustProxy);
 
 app.use(helmet({
     contentSecurityPolicy: false
@@ -37,8 +40,19 @@ app.use(cors({
         return callback(new Error("Not allowed by CORS"));
     }
 }));
+app.use(publicFiles(__dirname));
+app.use(rateLimit({ windowMs: 60 * 1000, limit: 120, standardHeaders: true,
+    legacyHeaders: false, message: { message: 'Too many requests. Please try again shortly.' } }));
+app.use((req, res, next) => {
+    res.set('Cache-Control', 'no-store');
+    next();
+});
 app.use(express.json({ limit: "50kb" }));
-app.use(express.static(__dirname));
+app.use(scalarBody);
+app.use(require('./requestValidation').validateWrite);
+app.get('/api/security-config', (req, res) => res.json({ siteKey: security.siteKey }));
+const verifyCaptcha = captcha(security);
+const loginAccountLimiter = accountLimiter();
 
 const authLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
@@ -110,7 +124,7 @@ function authenticateToken(req, res, next) {
         return res.status(401).json({ message: "Access denied. No token provided." });
     }
 
-    jwt.verify(token, JWT_SECRET, (err, user) => {
+    jwt.verify(token, JWT_SECRET, { algorithms: ['HS256'] }, (err, user) => {
         if (err) {
             return res.status(403).json({ message: "Invalid or expired token." });
         }
@@ -258,6 +272,9 @@ function calculateScore(profile, sch) {
 app.get("/search", async (req, res) => {
     try {
         const query = req.query.query;
+        if (query !== undefined && (typeof query !== 'string' || query.length > 200)) {
+            return res.status(400).json({ message: 'Search must be at most 200 characters' });
+        }
 
         if (!query || query.trim() === "") {
             return res.json([]);
@@ -289,7 +306,7 @@ app.get('/protected', authenticateToken, (req, res) => {
 
 
 
-app.post('/signup', authLimiter, async (req, res) => {
+app.post('/signup', authLimiter, validateAuth, verifyCaptcha, async (req, res) => {
     try {
         const { first_name, last_name, username, email, password } = req.body;
 
@@ -331,7 +348,7 @@ app.post('/signup', authLimiter, async (req, res) => {
 
 
 
-app.post('/login', authLimiter, async (req, res) => {
+app.post('/login', authLimiter, validateAuth, loginAccountLimiter, verifyCaptcha, async (req, res) => {
     try {
         const { email, password } = req.body;
 
@@ -341,7 +358,8 @@ app.post('/login', authLimiter, async (req, res) => {
         );
 
         if (results.length === 0) {
-            return res.status(400).json({ message: "User not found" });
+            await bcrypt.compare(password, '$2b$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy');
+            return res.status(401).json({ message: "Invalid email or password" });
         }
 
         const user = results[0];
@@ -349,7 +367,7 @@ app.post('/login', authLimiter, async (req, res) => {
         const isMatch = await bcrypt.compare(password, user.password);
 
         if (!isMatch) {
-            return res.status(400).json({ message: "Invalid password" });
+            return res.status(401).json({ message: "Invalid email or password" });
         }
 
         const token = jwt.sign(
@@ -794,7 +812,8 @@ app.post("/scholarships/:id/comment", commentLimiter, authenticateToken, async (
 
         const scholarshipId = req.params.id;
         const user_id = req.user.id;
-        const comment = (req.body.comment || "").trim();
+        if (typeof req.body.comment !== 'string') return res.status(400).json({ message: 'Comment must be text' });
+        const comment = req.body.comment.trim();
 
         if (!comment) {
             return res.status(400).json({
@@ -1192,10 +1211,16 @@ app.use((err, req, res, next) => {
         return res.status(403).json({ message: "CORS origin not allowed" });
     }
 
+    if (err.type === 'entity.too.large') return res.status(413).json({ message: 'Request body too large' });
+    if (err.type === 'entity.parse.failed') return res.status(400).json({ message: 'Invalid JSON' });
     console.error(err);
     res.status(500).json({ message: "Server error" });
 });
 
-app.listen(PORT, () => {
+const HOST = security.host;
+const server = app.listen(PORT, HOST, () => {
     console.log(`Server running on port ${PORT}`);
 });
+
+server.requestTimeout = 30000;
+server.headersTimeout = 10000;
