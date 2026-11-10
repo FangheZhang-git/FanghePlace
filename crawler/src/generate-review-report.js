@@ -33,8 +33,8 @@ function formatValue(value) {
   return String(value);
 }
 
-function countFallbacks(record) {
-  return Object.values(record.field_sources || {}).filter((source) => source === "fallback").length;
+function countUnresolved(record) {
+  return Object.values(record.field_sources || {}).filter((source) => source === "unresolved").length;
 }
 
 function getSuspiciousFlags(record) {
@@ -44,12 +44,12 @@ function getSuspiciousFlags(record) {
     flags.push(`Extraction status is \`${record.extraction_status}\`.`);
   }
 
-  if (countFallbacks(record) >= 5) {
-    flags.push(`Many fields use fallback values (${countFallbacks(record)} fields).`);
+  if (countUnresolved(record) >= 5) {
+    flags.push(`Many fields remain unresolved (${countUnresolved(record)} fields).`);
   }
 
-  if (!record.min_amount && !record.max_amount) {
-    flags.push("Award amount is missing or fallback `0`.");
+  if (record.min_amount === null && record.max_amount === null) {
+    flags.push("Award amount is unresolved.");
   }
 
   if (record.max_amount > 250000) {
@@ -60,16 +60,20 @@ function getSuspiciousFlags(record) {
     flags.push("Minimum amount is greater than maximum amount.");
   }
 
-  if (record.deadline === "TBD - next cycle") {
-    flags.push("Deadline needs manual verification.");
+  if (!record.deadline) {
+    flags.push("Deadline is unresolved.");
   }
 
   if (record.apply_url === record.source_url) {
     flags.push("Apply URL is the same as source URL; confirm this is the real application page.");
   }
 
-  if (record.requires_essay === 0 && /essay|personal statement|written response/i.test(record.source_text || "")) {
+  if (record.requires_essay === 0 && !record.field_evidence?.requires_essay?.length && /essay|personal statement|written response/i.test(record.source_text || "")) {
     flags.push("Source mentions essay/writing, but `requires_essay` is `0`.");
+  }
+
+  if (record.state) {
+    flags.push(`State restriction detected as \`${record.state}\`; confirm with official eligibility text.`);
   }
 
   if (record.race && record.race !== "No Restriction" && record.race !== "any") {
@@ -80,15 +84,21 @@ function getSuspiciousFlags(record) {
     flags.push(`Major restriction detected as \`${record.major}\`; confirm with official eligibility text.`);
   }
 
-  return flags;
+  for (const error of record.validation?.errors || []) {
+    flags.push(`Validation error: ${error}`);
+  }
+
+  for (const warning of record.validation?.warnings || []) {
+    flags.push(`Validation warning: ${warning}`);
+  }
+
+  return [...new Set(flags)];
 }
 
 function getReviewStatus(record) {
-  const suspiciousFlags = getSuspiciousFlags(record);
-  if (record.extraction_status !== "extracted") return "Needs Review";
-  if (suspiciousFlags.length >= 3) return "Needs Review";
-  if (suspiciousFlags.length > 0) return "Check";
-  return "Looks OK";
+  if (record.import_ready) return "Ready";
+  if (record.validation?.errors?.length || record.extraction_status === "failed") return "Needs Review";
+  return "Check";
 }
 
 function renderFieldTable(record) {
@@ -99,6 +109,29 @@ function renderFieldTable(record) {
 
   for (const field of REVIEW_FIELDS) {
     lines.push(`| \`${field}\` | ${formatValue(record[field])} | ${record.field_sources?.[field] || "direct_or_extracted"} |`);
+  }
+
+  return lines.join("\n");
+}
+
+function renderEvidence(record) {
+  const evidence = record.field_evidence || {};
+  const lines = [
+    "| Field | Extracted Value | Supporting Excerpt | Confidence |",
+    "| --- | --- | --- | --- |"
+  ];
+
+  for (const field of REVIEW_FIELDS) {
+    const entries = evidence[field] || [];
+    if (!entries.length) {
+      lines.push(`| \`${field}\` | ${formatValue(record[field])} | No evidence captured | - |`);
+      continue;
+    }
+
+    for (const entry of entries) {
+      const excerpt = String(entry.excerpt || "").replace(/\|/g, "\\|");
+      lines.push(`| \`${field}\` | ${formatValue(entry.value)} | ${excerpt} | ${entry.confidence || "unknown"} |`);
+    }
   }
 
   return lines.join("\n");
@@ -117,6 +150,7 @@ function renderRecord(record, index) {
     `**Provider:** ${record.provider || "Unknown"}`,
     `**Confidence:** ${record.confidence || "Unknown"}`,
     `**Extraction Status:** ${record.extraction_status || "Unknown"}`,
+    `**Import Ready:** ${record.import_ready ? "Yes" : "No"}`,
     `**Source URL:** ${record.source_url || "Unknown"}`,
     `**Apply URL:** ${record.apply_url || "Unknown"}`,
     "",
@@ -124,11 +158,15 @@ function renderRecord(record, index) {
     "",
     renderFieldTable(record),
     "",
+    "### Evidence",
+    "",
+    renderEvidence(record),
+    "",
     "### Suspicious / Needs Check",
     "",
     suspiciousFlags.length ? suspiciousFlags.map((flag) => `- ${flag}`).join("\n") : "- None flagged by automated review.",
     "",
-    "### Fallback / Inference Notes",
+    "### Unresolved / Inference Notes",
     "",
     notes.length ? notes.map((note) => `- ${note}`).join("\n") : "- None.",
     ""
@@ -152,7 +190,7 @@ async function main() {
     "## Summary",
     "",
     `- Total records: ${records.length}`,
-    `- Looks OK: ${statusCounts["Looks OK"] || 0}`,
+    `- Import ready: ${statusCounts.Ready || 0}`,
     `- Check: ${statusCounts.Check || 0}`,
     `- Needs Review: ${statusCounts["Needs Review"] || 0}`,
     "",
@@ -166,7 +204,16 @@ async function main() {
   console.log(`Wrote ${OUTPUT_PATH}`);
 }
 
-main().catch((error) => {
-  console.error(error);
-  process.exit(1);
-});
+if (require.main === module) {
+  main().catch((error) => {
+    console.error(error);
+    process.exit(1);
+  });
+}
+
+module.exports = {
+  getReviewStatus,
+  getSuspiciousFlags,
+  renderEvidence,
+  renderRecord
+};

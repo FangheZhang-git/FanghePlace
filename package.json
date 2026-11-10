@@ -9,7 +9,10 @@
     "crawl:scholarships:review": "node crawler/src/generate-review-report.js",
     "crawl:scholarships:static": "node crawler/src/run-scholarship-crawler.js --static",
     "start": "node server.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "node --watch server.js",
+    "test": "node --test crawler/test/*.test.js test/*.test.js",
+    "test:crawler": "node --test crawler/test/*.test.js",
+    "test:security": "node --test test/security.test.js test/session.test.js"
   },
   "repository": {
     "type": "git",
@@ -26,13 +29,19 @@
   "dependencies": {
     "bcrypt": "^6.0.0",
     "cors": "^2.8.6",
-    "crawlee": "^3.17.0",
     "dotenv": "^17.3.0",
     "express": "^5.2.1",
     "express-rate-limit": "^8.5.2",
     "helmet": "^8.2.0",
-    "jsonwebtoken": "^9.0.3",
-    "mysql2": "^3.17.0",
+    "mysql2": "^3.17.0"
+  },
+  "devDependencies": {
+    "crawlee": "^3.17.0",
     "playwright": "^1.61.1"
+  },
+  "overrides": {
+    "@crawlee/core": {
+      "minimatch": "11.0.1"
+    }
   }
 }

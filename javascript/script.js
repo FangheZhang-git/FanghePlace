@@ -1,7 +1,7 @@
 document.getElementById("Form").addEventListener("submit", async function (e) {
   e.preventDefault();
 
-  const token = localStorage.getItem("token");
+  const token = Boolean((await ScholarMatchSession.ready).user);
 
   if (!token) {
     alert("Please log in first.");
@@ -43,21 +43,35 @@ document.getElementById("Form").addEventListener("submit", async function (e) {
 
   console.log("PROFILE SUBMIT:", studentProfile);
 
-  const res = await fetch("/profile", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": "Bearer " + token
-    },
-    body: JSON.stringify(studentProfile)
-  });
+  const resultsTab = window.open("about:blank", "_blank");
 
-  const data = await res.json();
-
-  if (!res.ok) {
-    alert(data.message || "Failed to save profile.");
+  if (!resultsTab) {
+    alert("Please allow pop-ups for ScholarMatch so your matches can open in a new tab.");
     return;
   }
 
-  window.location.href = "results.html";
+  resultsTab.opener = null;
+
+  try {
+    const res = await ScholarMatchSession.request("/profile", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"},
+      body: JSON.stringify(studentProfile)
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      resultsTab.close();
+      alert(data.message || "Failed to save profile.");
+      return;
+    }
+
+    resultsTab.location.href = "results.html";
+  } catch (error) {
+    resultsTab.close();
+    console.error("Failed to save profile:", error);
+    alert("Failed to save profile. Please try again.");
+  }
 });

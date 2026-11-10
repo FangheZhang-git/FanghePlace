@@ -4,14 +4,31 @@ const mysql = require("mysql2/promise");
 const cors = require("cors");
 const helmet = require("helmet");
 const rateLimit = require("express-rate-limit");
-const jwt = require('jsonwebtoken');
+const { sessionSecurity } = require('./sessionSecurity');
+const { contentSecurityPolicy } = require('./contentSecurity');
+const { attachResearch, researchMatch } = require('./scholarshipResearch');
+const { evaluateScholarship } = require('./scholarshipMatcher');
 
+const { securityConfig, publicFiles, scalarBody, validateAuth, accountLimiter, captcha } = require('./security');
+const security = securityConfig();
 const JWT_SECRET = process.env.JWT_SECRET;
 
 const app = express();
 const bcrypt = require('bcrypt');
 
+const db = mysql.createPool({
+    host: process.env.DB_HOST,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_NAME
+});
+const sessions = sessionSecurity(db, security, JWT_SECRET);
+
 const allowedOrigins = new Set([
+    "http://localhost:3001",
+    "http://127.0.0.1:3001",
+    "http://localhost:5000",
+    "http://127.0.0.1:5000",
     "http://localhost:8080",
     "http://127.0.0.1:8080",
     "http://localhost:5501",
@@ -22,23 +39,61 @@ const allowedOrigins = new Set([
         .filter(Boolean)
 ]);
 
+function isAllowedOrigin(origin) {
+    if (!origin || allowedOrigins.has(origin)) return true;
+
+    try {
+        const url = new URL(origin);
+        return url.protocol === "http:" &&
+            (url.hostname === "localhost" || url.hostname === "127.0.0.1" || url.hostname === "[::1]");
+    } catch {
+        return false;
+    }
+}
+
 app.disable("x-powered-by");
-app.set("trust proxy", 1);
+// Explicit proxy trust; hop counts require a deployment with no direct ingress bypass.
+app.set("trust proxy", security.trustProxy);
 
 app.use(helmet({
-    contentSecurityPolicy: false
+    contentSecurityPolicy: contentSecurityPolicy(__dirname, security.production)
 }));
 app.use(cors({
     origin(origin, callback) {
-        if (!origin || allowedOrigins.has(origin)) {
+        if (isAllowedOrigin(origin)) {
             return callback(null, true);
         }
 
         return callback(new Error("Not allowed by CORS"));
     }
 }));
+app.use(publicFiles(__dirname));
+app.use(rateLimit({ windowMs: 60 * 1000, limit: 120, standardHeaders: true,
+    legacyHeaders: false, message: { message: 'Too many requests. Please try again shortly.' } }));
+app.use((req, res, next) => {
+    res.set('Cache-Control', 'no-store');
+    next();
+});
+// CSP reports are bounded telemetry, never authenticated application writes.
+app.post('/api/csp-report', express.json({ type: 'application/csp-report', limit: '8kb' }), (req, res) => {
+    const report = req.body?.['csp-report'];
+    if (report && typeof report['violated-directive'] === 'string') {
+        const directive = report['violated-directive'].split(' ')[0].replace(/[^a-z-]/g, '').slice(0,40);
+        let source = 'inline-or-unknown';
+        try { source = new URL(report['blocked-uri']).origin; } catch {}
+        console.warn('CSP blocked resource:', directive, source);
+    }
+    res.sendStatus(204);
+});
+app.use(sessions.protectWrites);
 app.use(express.json({ limit: "50kb" }));
-app.use(express.static(__dirname));
+app.use(scalarBody);
+app.use(require('./requestValidation').validateWrite);
+app.get('/api/session', sessions.describe);
+app.post('/logout', sessions.logout);
+app.get('/api/security-config', (req, res) => res.json({ siteKey: security.siteKey }));
+const verifyCaptcha = captcha(security);
+const loginAccountLimiter = accountLimiter();
 
 const authLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
@@ -64,12 +119,7 @@ const submissionLimiter = rateLimit({
     message: { message: "Too many scholarship submissions. Please try again later." }
 });
 
-const db = mysql.createPool({
-    host: process.env.DB_HOST,
-    user: process.env.DB_USER,
-    password: process.env.DB_PASSWORD,
-    database: process.env.DB_NAME
-});
+
 
 function isValidHttpUrl(value) {
     if (value === null || value === undefined || value === "") return true;
@@ -102,23 +152,7 @@ function validateApplyUrl(value) {
 
 
 
-function authenticateToken(req, res, next) {
-    const authHeader = req.headers['authorization'];
-    const token = authHeader && authHeader.split(' ')[1];
-
-    if (!token) {
-        return res.status(401).json({ message: "Access denied. No token provided." });
-    }
-
-    jwt.verify(token, JWT_SECRET, (err, user) => {
-        if (err) {
-            return res.status(403).json({ message: "Invalid or expired token." });
-        }
-
-        req.user = user;
-        next();
-    });
-}
+const authenticateToken = sessions.authenticate;
 
 function requireAdmin(req, res, next) {
     if (!req.user.is_admin) {
@@ -127,137 +161,12 @@ function requireAdmin(req, res, next) {
     next();
 }
 
-function calculateScore(profile, sch) {
-    let score = 0;
-
-    // hard filters that must be satisfied
-
-    if (sch.min_gpa && profile.gpa !== null && profile.gpa < sch.min_gpa) {
-        return null;
-    }
-
-    if (sch.min_sat && profile.sat !== null && profile.sat < sch.min_sat) {
-        return null;
-    }
-
-    if (sch.min_act && profile.act !== null && profile.act < sch.min_act) {
-        return null;
-    }
-
-    // Conditions that need to be matched if there is one
-    if (sch.citizenship && sch.citizenship !== "No Restriction" && profile.citizenship && sch.citizenship !== profile.citizenship) {
-        return null;
-    }
-
-    if (sch.state && sch.state !== "No Restriction" && sch.state !== "any" && profile.residency && sch.state !== profile.residency) {
-        return null;
-    }
-
-    if (sch.major && sch.major !== "No Restriction" && sch.major !== "any" && profile.major && sch.major !== profile.major) {
-        return null;
-    }
-
-    if (sch.requires_essay === 1 && profile.willing_essay !== 1) {
-        return null;
-    }
-
-    if (sch.first_gen_only === 1 && profile.first_gen !== 1) {
-        return null;
-    }
-
-    if (sch.leadership === "required" && profile.leadership !== 1) {
-        return null;
-    }
-
-    if (sch.award === "required" && profile.award !== 1) {
-        return null;
-    }
-
-    if (sch.race && sch.race !== "No Restriction" && sch.race !== "any" && profile.race && sch.race !== profile.race) {
-        return null;
-    }
-
-    if (sch.max_income && profile.income !== null && profile.income > sch.max_income) {
-        return null;
-    }
-
-    if (sch.min_income && profile.income !== null && profile.income < sch.min_income) {
-        return null;
-    }
-
-    // SCORING 
-
-    if (profile.gpa) {
-        score += profile.gpa * 10;
-    }
-
-    if (profile.sat) {
-        score += profile.sat / 100;
-    }
-
-    if(profile.sat >= 1500){
-        score += 20;
-    }
-
-    if (profile.act) {
-        score += profile.act / 2;
-    }
-
-    // AP / honors / advanced coursework
-    if (profile.has_ap === 1) {
-        score += 5;
-    }
-
-    if (profile.ap_high_scores) {
-        score += profile.ap_high_scores * 2;
-    }
-
-    if (profile.has_honors === 1) {
-        score += 3;
-    }
-
-    if (sch.advanced_coursework_preferred === 1) {
-        if (profile.has_ap === 1 || profile.has_honors === 1 || profile.has_dual_enrollment === 1) {
-            score += 8;
-        }
-    }
-
-    // leadership preferred
-    if (sch.leadership === "preferred" && profile.leadership === 1) {
-        score += 10;
-    }
-
-    // award preferred
-    if (sch.award === "preferred" && profile.award === 1) {
-        score += 10;
-    }
-
-    // first-gen bonus
-    if (profile.first_gen === 1) {
-        score += 5;
-    }
-
-    // merit / need type bonus
-    if (sch.type === "pure_merit_based") {
-        if (profile.gpa >= 3.7) score += 8;
-        if (profile.sat >= 1450 || profile.act >= 32) score += 8;
-    }
-
-    if (sch.type === "pure_need_based") {
-        if (profile.income !== null && profile.income <= 60000) score += 12;
-    }
-
-    if (sch.type === "merit_plus_need") {
-        if (profile.income !== null && profile.income <= 80000) score += 8;
-        if (profile.gpa >= 3.4) score += 6;
-    }
-
-    return score;
-}
-
 app.get("/search", async (req, res) => {
     try {
         const query = req.query.query;
+        if (query !== undefined && (typeof query !== 'string' || query.length > 200)) {
+            return res.status(400).json({ message: 'Search must be at most 200 characters' });
+        }
 
         if (!query || query.trim() === "") {
             return res.json([]);
@@ -268,7 +177,7 @@ app.get("/search", async (req, res) => {
             [`%${query}%`]
         );
 
-        res.json(rows);
+        res.json(await attachResearch(db, rows));
     } catch (err) {
         console.error(err);
         res.status(500).json({ message: "Search error" });
@@ -289,7 +198,7 @@ app.get('/protected', authenticateToken, (req, res) => {
 
 
 
-app.post('/signup', authLimiter, async (req, res) => {
+app.post('/signup', authLimiter, validateAuth, verifyCaptcha, async (req, res) => {
     try {
         const { first_name, last_name, username, email, password } = req.body;
 
@@ -310,16 +219,8 @@ app.post('/signup', authLimiter, async (req, res) => {
         );
 
         const userId = result.insertId;
-        const token = jwt.sign(
-            { id: userId, email: email, username: username, is_admin: 0 },
-            JWT_SECRET,
-            { expiresIn: "1h" }
-        );
-
-        res.status(201).json({
-            message: "User created successfully",
-            token: token
-        });
+        const sessionUser = await sessions.issue(req, res, { id: userId, username, is_admin: 0 });
+        res.status(201).json({ message: "User created successfully", user: sessionUser });
 
 
 
@@ -331,7 +232,7 @@ app.post('/signup', authLimiter, async (req, res) => {
 
 
 
-app.post('/login', authLimiter, async (req, res) => {
+app.post('/login', authLimiter, validateAuth, loginAccountLimiter, verifyCaptcha, async (req, res) => {
     try {
         const { email, password } = req.body;
 
@@ -341,7 +242,8 @@ app.post('/login', authLimiter, async (req, res) => {
         );
 
         if (results.length === 0) {
-            return res.status(400).json({ message: "User not found" });
+            await bcrypt.compare(password, '$2b$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy');
+            return res.status(401).json({ message: "Invalid email or password" });
         }
 
         const user = results[0];
@@ -349,24 +251,11 @@ app.post('/login', authLimiter, async (req, res) => {
         const isMatch = await bcrypt.compare(password, user.password);
 
         if (!isMatch) {
-            return res.status(400).json({ message: "Invalid password" });
+            return res.status(401).json({ message: "Invalid email or password" });
         }
 
-        const token = jwt.sign(
-            {
-                id: user.id,
-                email: user.email,
-                username: user.username,
-                is_admin: user.is_admin
-            },
-            JWT_SECRET,
-            { expiresIn: "1h" }
-        );
-
-        res.json({
-            message: "Login successful",
-            token
-        });
+        const sessionUser = await sessions.issue(req, res, user);
+        res.json({ message: "Login successful", user: sessionUser });
 
     } catch (err) {
         console.error(err);
@@ -452,13 +341,21 @@ app.post('/profile', authenticateToken, async (req, res) => {
 app.get("/scholarships", async (req, res) => {
     try {
         const [rows] = await db.query("SELECT * FROM scholarships");
-        res.json(rows);
+        res.json(await attachResearch(db, rows));
     } catch (err) {
         console.error("DB ERROR:", err);
         res.status(500).json({ message: "Error fetching scholarships" });
     }
 });
 
+
+app.get('/api/scholarships/:id', async (req, res) => {
+    const id = Number(req.params.id);
+    if (!Number.isSafeInteger(id) || id <= 0) return res.status(400).json({message:'Invalid scholarship ID'});
+    const [rows] = await db.query('SELECT * FROM scholarships WHERE id=?', [id]);
+    if (!rows.length) return res.status(404).json({message:'Scholarship not found'});
+    res.json((await attachResearch(db, rows))[0]);
+});
 
 app.get("/match", authenticateToken, async (req, res) => {
     try {
@@ -478,20 +375,27 @@ app.get("/match", authenticateToken, async (req, res) => {
         const profile = profiles[0];
 
 
-        const [scholarships] = await db.query(
+        const [scholarshipRows] = await db.query(
             "SELECT * FROM scholarships"
         );
+        const scholarships = await attachResearch(db, scholarshipRows);
 
 
         const matched = scholarships
             .map(sch => {
-                const score = calculateScore(profile, sch);
-                if (score === null) return null;
-
-                return { ...sch, score };
+                if (sch.research) {
+                    return researchMatch(profile, sch);
+                }
+                const evaluation = evaluateScholarship(profile, sch);
+                if (!evaluation.eligible) return null;
+                return {
+                    ...sch,
+                    score: evaluation.score,
+                    match_status: evaluation.match_status
+                };
             })
             .filter(Boolean)
-            .sort((a, b) => b.score - a.score);
+            .sort((a, b) => (b.score ?? -1) - (a.score ?? -1));
 
         res.json(matched);
 
@@ -509,7 +413,7 @@ app.get("/match", authenticateToken, async (req, res) => {
 //View all scholarships (admin only)
 app.get('/admin/scholarships', authenticateToken, requireAdmin, async (req, res) => {
     const [rows] = await db.query("SELECT * FROM scholarships");
-    res.json(rows);
+    res.json(await attachResearch(db, rows));
 });
 
 // add scholarships
@@ -783,7 +687,7 @@ app.get("/saved-scholarships", authenticateToken, async (req, res) => {
         WHERE ss.user_id=?
     `, [userId])
 
-    res.json(rows)
+    res.json(await attachResearch(db, rows))
 
 })
 
@@ -794,7 +698,8 @@ app.post("/scholarships/:id/comment", commentLimiter, authenticateToken, async (
 
         const scholarshipId = req.params.id;
         const user_id = req.user.id;
-        const comment = (req.body.comment || "").trim();
+        if (typeof req.body.comment !== 'string') return res.status(400).json({ message: 'Comment must be text' });
+        const comment = req.body.comment.trim();
 
         if (!comment) {
             return res.status(400).json({
@@ -1192,10 +1097,26 @@ app.use((err, req, res, next) => {
         return res.status(403).json({ message: "CORS origin not allowed" });
     }
 
+    if (err.type === 'entity.too.large') return res.status(413).json({ message: 'Request body too large' });
+    if (err.type === 'entity.parse.failed') return res.status(400).json({ message: 'Invalid JSON' });
     console.error(err);
     res.status(500).json({ message: "Server error" });
 });
 
-app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
+const HOST = security.host;
+sessions.initialize().then(() => {
+    const server = app.listen(PORT, HOST, () => {
+        console.log(`Server running on port ${PORT}`);
+    });
+    server.requestTimeout = 30000;
+    server.headersTimeout = 10000;
+    const cleanup = setInterval(() => {
+        db.query('DELETE FROM web_sessions WHERE expires_at <= UTC_TIMESTAMP()')
+            .catch(() => console.error('Expired-session cleanup failed'));
+    }, 15 * 60 * 1000);
+    cleanup.unref();
+}).catch(() => {
+    console.error('Session storage initialization failed. Check the database connection and migration permissions.');
+    process.exitCode = 1;
+    db.end();
 });

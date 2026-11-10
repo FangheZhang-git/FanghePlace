@@ -41,27 +41,19 @@ form.addEventListener("submit", async (e) => {
     const email = document.getElementById("email").value;
     const password = document.getElementById("password").value;
 
-    const response = await fetch("/login", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ email, password })
-    });
+    let response;
+    try {
+        response = await window.authRequest('/login', { email, password });
+    } catch (error) {
+        document.getElementById('message').textContent = error.message || 'Unable to log in. Please try again.';
+        return;
+    }
 
     const data = await response.json();
 
     const messageElement = document.getElementById("message");
     if (response.ok) {
-        localStorage.setItem("token", data.token);
-
-        // Decode JWT payload
-        const payload = JSON.parse(
-            atob(data.token.split(".")[1])
-        );
-
-        localStorage.setItem("user_id", payload.id);
-        localStorage.setItem("username", payload.username);
+        const payload = data.user;
 
         messageElement.innerText = "Login successful!";
         messageElement.style.color = "green";

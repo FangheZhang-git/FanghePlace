@@ -1,9 +1,9 @@
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
 
   const searchInput = document.getElementById("searchInput");
   const searchButton = document.getElementById("barSearch");
 
-  const token = localStorage.getItem("token");
+  const token = Boolean((await ScholarMatchSession.ready).user);
 
   const loginBtn = document.getElementById("login");
   const signupBtn = document.getElementById("signup");
@@ -17,7 +17,7 @@ document.addEventListener("DOMContentLoaded", () => {
     MyAccount.style.display = "none";
   }
 
-  searchButton.addEventListener("click", () => {
+  searchButton.addEventListener("click", async () => {
 
     if (!token) {
       window.location.href = "login.html";
@@ -38,9 +38,9 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   if (keyToSuccess) {
-    keyToSuccess.addEventListener("click", () => {
+    keyToSuccess.addEventListener("click", async () => {
 
-      const token = localStorage.getItem("token");
+      const token = Boolean((await ScholarMatchSession.ready).user);
 
       if (!token) {
         window.location.href = "login.html";
@@ -54,7 +54,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
 });
 
-function logout() {
-  localStorage.removeItem("token");
-  window.location.reload();
+async function logout() {
+  try { await ScholarMatchSession.logout(); } catch (error) { alert(error.message); }
 }

@@ -1,60 +1,50 @@
-const FALLBACKS = {
-  min_amount: 0,
-  max_amount: 0,
-  min_gpa: 0,
-  min_sat: 0,
-  min_act: 0,
-  citizenship: "No Restriction",
-  state: "No Restriction",
-  major: "No Restriction",
-  requires_essay: 0,
-  first_gen_only: 0,
-  leadership: 0,
-  min_income: 0,
-  max_income: 0,
-  renewable: 0,
-  description: "No description extracted",
-  apply_url: "No apply URL found",
-  deadline: "TBD - next cycle",
-  advanced_coursework_preferred: 0,
-  award: 0,
-  race: "No Restriction",
-  type: "pure_merit_based"
-};
+const STAGED_FIELDS = [
+  "min_amount", "max_amount", "min_gpa", "min_sat", "min_act",
+  "citizenship", "state", "major", "requires_essay", "first_gen_only",
+  "leadership", "min_income", "max_income", "renewable", "description",
+  "apply_url", "deadline", "advanced_coursework_preferred", "award", "race", "type"
+];
 
 function fillScholarshipFallbacks(record) {
-  const field_sources = {};
+  const field_sources = {
+    name: record.name ? "seed_or_page" : "unresolved",
+    provider: record.provider ? "domain_derived" : "unresolved"
+  };
   const inference_notes = [];
   const filled = { ...record };
 
-  for (const [field, fallback] of Object.entries(FALLBACKS)) {
+  for (const field of STAGED_FIELDS) {
     const value = filled[field];
     if (value === null || value === undefined || value === "") {
-      filled[field] = fallback;
-      field_sources[field] = "fallback";
-      inference_notes.push(`${field} was missing and filled with fallback value ${JSON.stringify(fallback)}.`);
+      filled[field] = null;
+      field_sources[field] = "unresolved";
+      inference_notes.push(`${field} was not established by extraction and remains unresolved.`);
     } else {
-      field_sources[field] = "direct_or_extracted";
+      field_sources[field] = filled.field_evidence?.[field]?.length ? "extracted_with_evidence" : "derived_or_extracted";
     }
   }
 
-  if (!filled.apply_url || filled.apply_url === "No apply URL found") {
+  if (!filled.apply_url && filled.source_url) {
     filled.apply_url = filled.source_url;
     field_sources.apply_url = "derived";
-    inference_notes.push("apply_url was derived from source_url.");
+    inference_notes.push("apply_url was derived from source_url and requires confirmation.");
   }
 
-  const fallbackCount = Object.values(field_sources).filter((source) => source === "fallback").length;
-  filled.confidence = fallbackCount > 8 ? "low" : filled.confidence || "medium";
-  filled.value_source = fallbackCount ? "mixed" : "direct_or_extracted";
+  const unresolved_fields = Object.entries(field_sources)
+    .filter(([, source]) => source === "unresolved")
+    .map(([field]) => field);
+  filled.confidence = unresolved_fields.length > 8 ? "low" : filled.confidence || "medium";
+  filled.value_source = unresolved_fields.length ? "mixed_with_unresolved" : "extracted";
   filled.field_sources = field_sources;
   filled.inference_notes = inference_notes;
+  filled.unresolved_fields = unresolved_fields;
 
   return filled;
 }
 
 function buildEmptyWinnerBackground(sourceRecord) {
   return {
+    crawl_index: sourceRecord.crawl_index,
     scholarship_name: sourceRecord.name,
     scholarship_provider: sourceRecord.provider,
     winner_name: "Unknown",

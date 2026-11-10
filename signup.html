@@ -4,8 +4,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="application-name" content="ScholarMatch">
+    <meta name="description" content="Create a free ScholarMatch account to build your student profile and discover matching scholarships.">
+    <link rel="canonical" href="https://scholarmatch.net/signup.html">
+    <meta property="og:site_name" content="ScholarMatch">
     <link rel="stylesheet" href="css/signup.css">
-    <title>Signup</title>
+    <link rel="icon" href="image/ScholarMatch.png">
+    <title>Sign Up - ScholarMatch</title>
     <style>
         a {
             text-decoration: none;
@@ -22,6 +27,7 @@
             position: relative;
         }
     </style>
+  <script src="javascript/session.js"></script>
 </head>
 
 <body>
@@ -44,7 +50,7 @@
 
         <input type="email" class="signupGroup" id="email" placeholder="Please Enter Email" required />
 
-        <input type="password" class="signupGroup" id="password" placeholder="Please Enter Password" required />
+        <input type="password" class="signupGroup" id="password" minlength="12" placeholder="Password (at least 12 characters)" required />
 
         <button type="submit">Create Account</button>
         <p class="terms">
@@ -64,7 +70,8 @@
     <div id="google_translate_element" style="display:none;"></div>
 
     <script src="javascript/translate.js"></script>
-    <script src="javascript/signup.js"></script>
+    <script src="javascript/authSecurity.js"></script>
+  <script src="javascript/signup.js"></script>
 </body>
 
 </html>

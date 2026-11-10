@@ -53,7 +53,7 @@ function loadGoogleTranslateScript() {
 
     const script = document.createElement("script");
     script.id = "googleTranslateScript";
-    script.src = "//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit";
+    script.src = "https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit";
     document.body.appendChild(script);
 }
 
@@ -80,6 +80,8 @@ function getSavedLanguage() {
 
 // Write cookie when page start loading
 // Language at Initialization
+
+//Redheart style change
 
 (function applySavedLanguageBeforeGoogleLoads() {
     const lang = getSavedLanguage();

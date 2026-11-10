@@ -1,4 +1,5 @@
-const token = localStorage.getItem("token");
+(async () => {
+const token = Boolean((await ScholarMatchSession.ready).user);
 let editingId = null;
 let editingSubmissionId = null;
 
@@ -9,10 +10,8 @@ if (!token) {
 
 async function loadScholarships() {
 
-    const res = await fetch("/admin/scholarships", {
-        headers: {
-            "Authorization": "Bearer " + token
-        }
+    const res = await ScholarMatchSession.request("/admin/scholarships", {
+        headers: {}
     });
 
     if (res.status === 403) {
@@ -65,11 +64,9 @@ async function deleteScholarship(id) {
 
     if (!confirm("Delete this scholarship?")) return;
 
-    await fetch(`/admin/scholarships/${id}`, {
+    await ScholarMatchSession.request(`/admin/scholarships/${id}`, {
         method: "DELETE",
-        headers: {
-            "Authorization": "Bearer " + token
-        }
+        headers: {}
     });
 
     loadScholarships();
@@ -79,10 +76,8 @@ async function editScholarship(id) {
 
     editingId = id;
 
-    const res = await fetch(`/admin/scholarships/${id}`, {
-        headers: {
-            "Authorization": "Bearer " + token
-        }
+    const res = await ScholarMatchSession.request(`/admin/scholarships/${id}`, {
+        headers: {}
     });
 
     const sch = await res.json();
@@ -90,29 +85,29 @@ async function editScholarship(id) {
     document.getElementById("name").value = sch.name || "";
     document.getElementById("provider").value = sch.provider || "";
 
-    document.getElementById("min_amount").value = sch.min_amount || "";
-    document.getElementById("max_amount").value = sch.max_amount || "";
+    document.getElementById("min_amount").value = sch.min_amount ?? "";
+    document.getElementById("max_amount").value = sch.max_amount ?? "";
 
-    document.getElementById("min_gpa").value = sch.min_gpa || "";
-    document.getElementById("min_sat").value = sch.min_sat || "";
-    document.getElementById("min_act").value = sch.min_act || "";
+    document.getElementById("min_gpa").value = sch.min_gpa ?? "";
+    document.getElementById("min_sat").value = sch.min_sat ?? "";
+    document.getElementById("min_act").value = sch.min_act ?? "";
 
-    document.getElementById("citizenship").value = sch.citizenship || "";
-    document.getElementById("state").value = sch.state || "";
-    document.getElementById("major").value = sch.major || "";
+    setScholarshipSelect("citizenship", sch.citizenship);
+    setScholarshipSelect("state", sch.state);
+    setScholarshipSelect("major", sch.major);
 
-    document.getElementById("requires_essay").value = sch.requires_essay;
-    document.getElementById("first_gen_only").value = sch.first_gen_only;
-    document.getElementById("leadership").value = sch.leadership;
+    document.getElementById("requires_essay").value = sch.requires_essay ?? "";
+    document.getElementById("first_gen_only").value = sch.first_gen_only ?? "";
+    document.getElementById("leadership").value = sch.leadership ?? "";
 
     document.getElementById("award").value = sch.award || "";
 
-    document.getElementById("min_income").value = sch.min_income || "";
-    document.getElementById("max_income").value = sch.max_income || "";
+    document.getElementById("min_income").value = sch.min_income ?? "";
+    document.getElementById("max_income").value = sch.max_income ?? "";
 
-    document.getElementById("renewable").value = sch.renewable;
+    document.getElementById("renewable").value = sch.renewable ?? "";
     document.getElementById("advanced_coursework_preferred").value =
-        sch.advanced_coursework_preferred;
+        sch.advanced_coursework_preferred ?? "";
 
     document.getElementById("race").value = sch.race || "";
 
@@ -148,15 +143,15 @@ async function addScholarship() {
         state: document.getElementById("state").value || null,
         major: document.getElementById("major").value || null,
 
-        requires_essay: document.getElementById("requires_essay").value,
-        first_gen_only: document.getElementById("first_gen_only").value,
-        leadership: document.getElementById("leadership").value,
-        award: document.getElementById("award").value,
+        requires_essay: document.getElementById("requires_essay").value || null,
+        first_gen_only: document.getElementById("first_gen_only").value || null,
+        leadership: document.getElementById("leadership").value || null,
+        award: document.getElementById("award").value || null,
 
         min_income: document.getElementById("min_income").value || null,
         max_income: document.getElementById("max_income").value || null,
-        renewable: document.getElementById("renewable").value,
-        advanced_coursework_preferred: document.getElementById("advanced_coursework_preferred").value,
+        renewable: document.getElementById("renewable").value || null,
+        advanced_coursework_preferred: document.getElementById("advanced_coursework_preferred").value || null,
 
         race: document.getElementById("race").value || null,
 
@@ -164,7 +159,7 @@ async function addScholarship() {
         apply_url: document.getElementById("apply_url").value || null,
         deadline: document.getElementById("deadline").value || null,
 
-        type: document.getElementById("type").value
+        type: document.getElementById("type").value || null
     };
 
     const url = editingSubmissionId
@@ -175,13 +170,11 @@ async function addScholarship() {
 
     const method = editingId || editingSubmissionId ? "PUT" : "POST";
 
-    const res = await fetch(url, {
+    const res = await ScholarMatchSession.request(url, {
         method: method,
 
         headers: {
-            "Content-Type": "application/json",
-            "Authorization": "Bearer " + token
-        },
+            "Content-Type": "application/json"},
 
         body: JSON.stringify(data)
 
@@ -228,12 +221,10 @@ function filterScholarships() {
 
 async function loadSubmissions() {
 
-    const token = localStorage.getItem("token");
+    const token = Boolean((await ScholarMatchSession.ready).user);
 
-    const res = await fetch("/admin/submissions", {
-        headers: {
-            "Authorization": "Bearer " + token
-        }
+    const res = await ScholarMatchSession.request("/admin/submissions", {
+        headers: {}
     });
 
     const submissions = await res.json();
@@ -282,13 +273,11 @@ async function loadSubmissions() {
 
 async function approveSubmission(id) {
 
-    const token = localStorage.getItem("token");
+    const token = Boolean((await ScholarMatchSession.ready).user);
 
-    const res = await fetch(`/admin/submissions/${id}/approve`, {
+    const res = await ScholarMatchSession.request(`/admin/submissions/${id}/approve`, {
         method: "POST",
-        headers: {
-            "Authorization": "Bearer " + token
-        }
+        headers: {}
     });
 
     const result = await res.json();
@@ -302,13 +291,11 @@ async function approveSubmission(id) {
 
 async function rejectSubmission(id) {
 
-    const token = localStorage.getItem("token");
+    const token = Boolean((await ScholarMatchSession.ready).user);
 
-    const res = await fetch(`/admin/submissions/${id}/reject`, {
+    const res = await ScholarMatchSession.request(`/admin/submissions/${id}/reject`, {
         method: "POST",
-        headers: {
-            "Authorization": "Bearer " + token
-        }
+        headers: {}
     });
 
     const result = await res.json();
@@ -322,12 +309,10 @@ async function rejectSubmission(id) {
 
 async function editSubmission(id) {
 
-    const token = localStorage.getItem("token");
+    const token = Boolean((await ScholarMatchSession.ready).user);
 
-    const res = await fetch(`/admin/submissions/${id}`, {
-        headers: {
-            "Authorization": "Bearer " + token
-        }
+    const res = await ScholarMatchSession.request(`/admin/submissions/${id}`, {
+        headers: {}
     });
 
     const data = await res.json();
@@ -398,3 +383,18 @@ loadSubmissions();
 
 
 loadScholarships();
+function setScholarshipSelect(id, value) {
+    const select = document.getElementById(id);
+    const normalized = value == null ? '' : String(value);
+    if (normalized && !Array.from(select.options).some(option => option.value === normalized)) {
+        const option = document.createElement('option');
+        option.value = normalized;
+        option.textContent = normalized === 'any' ? 'Any (verified unrestricted)' : normalized;
+        select.appendChild(option);
+    }
+    select.value = normalized;
+}
+
+document.getElementById('searchInput').addEventListener('keyup', filterScholarships);
+document.querySelector('.add-btn').addEventListener('click', addScholarship);
+})().catch(() => alert('Unable to load the admin session. Please reload.'));

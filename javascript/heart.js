@@ -13,16 +13,14 @@
         if (!heart) return;
 
         const scholarshipId = dom.recordId(heart.dataset.id);
-        const token = localStorage.getItem("token");
+        const token = Boolean((await ScholarMatchSession.ready).user);
         if (!scholarshipId || !token) return;
 
         try {
-            const res = await fetch("/toggle-save", {
+            const res = await ScholarMatchSession.request("/toggle-save", {
                 method: "POST",
                 headers: {
-                    "Content-Type": "application/json",
-                    "Authorization": "Bearer " + token
-                },
+                    "Content-Type": "application/json"},
                 body: JSON.stringify({ scholarship_id: scholarshipId })
             });
             if (!res.ok) return console.error("Save failed");
@@ -63,11 +61,11 @@
 
     async function loadSavedScholarships() {
         const container = document.getElementById("savedScholarships");
-        const token = localStorage.getItem("token");
+        const token = Boolean((await ScholarMatchSession.ready).user);
         if (!container || !token) return;
 
-        const res = await fetch("/saved-scholarships", {
-            headers: { "Authorization": "Bearer " + token }
+        const res = await ScholarMatchSession.request("/saved-scholarships", {
+            headers: {}
         });
         const scholarships = await res.json();
         dom.clear(container);
@@ -82,11 +80,11 @@
     }
 
     async function loadSavedHearts() {
-        const token = localStorage.getItem("token");
+        const token = Boolean((await ScholarMatchSession.ready).user);
         if (!token) return;
 
-        const res = await fetch("/saved-ids", {
-            headers: { "Authorization": "Bearer " + token }
+        const res = await ScholarMatchSession.request("/saved-ids", {
+            headers: {}
         });
         const data = await res.json();
         if (!Array.isArray(data)) return;

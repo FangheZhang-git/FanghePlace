@@ -15,19 +15,16 @@ form.addEventListener("submit", async (e) => {
     const emailValue = document.getElementById("email").value;
     const passwordValue = document.getElementById("password").value;
 
-    const response = await fetch("/signup", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-            first_name: firstNameValue,
-            last_name: lastNameValue,
-            username: userNameValue,
-            email: emailValue,
-            password: passwordValue
-        })
-    });
+    let response;
+    try {
+        response = await window.authRequest('/signup', {
+            first_name: firstNameValue, last_name: lastNameValue,
+            username: userNameValue, email: emailValue, password: passwordValue
+        });
+    } catch (error) {
+        document.getElementById('message').textContent = error.message || 'Unable to sign up. Please try again.';
+        return;
+    }
 
     const data = await response.json();
     const messageBox = document.getElementById("message");
@@ -36,16 +33,6 @@ form.addEventListener("submit", async (e) => {
 
     if(response.ok){
         messageBox.classList.remove("error");
-
-        //save login token
-        localStorage.setItem("token", data.token);
-
-        const payload = JSON.parse(
-            atob(data.token.split(".")[1])
-        );
-
-        localStorage.setItem("user_id", payload.id);
-        localStorage.setItem("username", payload.username);
 
         goToLoadingPage("index.html", "Creating your account");
     }

@@ -14,12 +14,10 @@ The crawler should collect public scholarship information and public winner-back
 - Use per-domain throttling so one website is not overloaded.
 - Save extracted records to staging output first, not directly into production scholarship tables.
 - Skip scholarships that already exist in ScholarMatch before crawling them.
-- Use reasoning-based inference when fields are missing, but store whether a value is directly sourced or inferred.
-- Try to make every important category field non-empty by using one of:
-  - direct source value;
-  - clear derived value;
-  - reasonable inference;
-  - explicit fallback such as `Unknown`, `No Evidence Found`, `No Restriction`, or `TBD - next cycle`.
+- Extract eligibility fields only from requirement-oriented text and retain the exact supporting excerpt for review.
+- Keep a missing or ambiguous fact as `null`; do not turn absence of evidence into `0`, `No Restriction`, or another production-looking value.
+- Validate staged records against canonical frontend values, MySQL enums, primitive types, ranges, URL protocols, and field lengths.
+- Mark every record with `validation`, `review_status`, and `import_ready`. Any unresolved field or validation warning prevents automatic import readiness.
 
 ## Crawling Workflow
 
@@ -34,15 +32,16 @@ The crawler should collect public scholarship information and public winner-back
 - Crawl several domains concurrently when allowed.
 - Keep concurrency conservative at first:
   - global concurrency: `3-5` pages at a time;
-  - per-domain concurrency: `1` page at a time;
-  - delay between requests to the same domain: `2-5` seconds.
+  - request starts for the same domain spaced by `2-5` seconds;
+  - do not assume spacing request starts guarantees only one long-running request per domain.
 - Extract readable page text, metadata, headings, tables, deadlines, award amounts, eligibility rules, and application links.
 - Normalize extracted data into ScholarMatch fields.
-- Run an inference step for missing fields.
+- Annotate unresolved fields without inventing fallback facts.
+- Validate each staged record before writing output.
 - Save results to `crawler/output/scholarships-staging.json`.
 - Save skipped duplicate seeds to `crawler/output/skipped-existing-scholarships.json`.
 - Manually review staged results before database import.
-- Add database insertion only after extraction accuracy is reliable.
+- Keep database insertion disabled. `import_ready` is a review aid, not permission for the crawler to write to MySQL.
 
 ## Scholarship Fields To Extract
 
@@ -76,6 +75,12 @@ Scholarship records should map toward the current ScholarMatch scholarship data 
 - `last_verified`
 - `confidence`
 - `extraction_status`
+- `field_evidence`
+- `field_sources`
+- `unresolved_fields`
+- `validation`
+- `review_status`
+- `import_ready`
 
 ## Winner Background Fields
 
@@ -121,25 +126,26 @@ Suggested fields:
 - `confidence`
 - `review_status`
 
-`value_source` should identify how the field was filled:
+`value_source` and `field_sources` identify how fields were established:
 
 - `direct`: clearly stated by the source.
 - `derived`: calculated from nearby source facts.
-- `inferred`: reasoned estimate from public context.
-- `fallback`: no strong evidence, filled with a default non-empty value.
+- `domain_derived`: provider name was derived from the source hostname and still needs confirmation.
+- `extracted_with_evidence`: value has a captured supporting excerpt.
+- `unresolved`: the page did not establish a safe value; the staged value remains `null`.
 
 ## Inference Rules
 
 - Prefer direct source evidence over inference.
-- If a scholarship says an essay is required, set `requires_essay = 1`.
+- If eligibility text says an essay is required, set `requires_essay = 1` and retain that sentence. If it explicitly says no essay is required, set it to `0` with the negating sentence.
 - If a winner biography mentions an essay, personal statement, writing contest, or application essay, set `essay_written = 1`.
 - If a winner has published leadership roles, set `leadership = 1`.
 - If a winner has state, national, international, major academic, athletic, civic, research, or arts awards, set `award = 1`.
-- If AP, honors, or dual enrollment are not stated, infer cautiously from school profile, academic rigor language, or advanced coursework mentions.
-- If exact AP count or AP high-score count is unavailable, use a reasoned estimate and mark `value_source = inferred`.
-- If race, income, gender, citizenship, or first-generation status are not stated, do not invent a precise identity. Use `Unknown` or `No Evidence Found`.
-- If GPA, SAT, or ACT are not stated, estimate only when strong contextual evidence exists, and mark the field as inferred.
-- Every inferred field should include a short explanation in `evidence_text` or a future `inference_reason` field.
+- For scholarship restrictions, do not infer AP, honors, dual enrollment, race, income, citizenship, state, major, first-generation status, GPA, SAT, or ACT from general prose.
+- If a page supports multiple states, majors, races, or citizenship categories that the current database cannot represent in one field, keep the field unresolved and show all relevant excerpts.
+- State extraction supports all U.S. states, the District of Columbia, and U.S. territories, but only inside eligibility-related sentences.
+- Crawler outputs for `leadership` and `award` must be exactly `required`, `preferred`, `not_considered`, or unresolved.
+- Crawler outputs for `type`, citizenship, race, major, and state must use the exact canonical values in `crawler/src/categories.js`.
 
 ## V1 Implementation Plan
 
@@ -148,7 +154,11 @@ Suggested fields:
   - `crawler/seeds/known-existing-scholarships.json` manually maintained list of scholarships already on the site;
   - `crawler/src/run-scholarship-crawler.js` crawler runner;
   - `crawler/src/extractors.js` extraction helpers;
-  - `crawler/src/inference.js` fallback and inference helpers;
+  - `crawler/src/categories.js` canonical machine values shared by extraction and validation;
+  - `crawler/src/inference.js` unresolved-field and provenance annotation helpers;
+  - `crawler/src/validation.js` staging schema, enum, range, and import-readiness validation;
+  - `crawler/src/generate-review-report.js` evidence-rich manual review report generator;
+  - `crawler/test/` saved HTML fixtures and Node test coverage;
   - ignored `crawler/output/` staging output folder.
 - The first version is file-output based:
   - `crawler/output/scholarships-staging.json`
@@ -165,9 +175,13 @@ Run commands:
 npm run crawl:scholarships:dry-run
 npm run crawl:scholarships:static
 npm run crawl:scholarships
+npm run crawl:scholarships:review
+npm test
 ```
 
 Use `crawl:scholarships:static` for static HTML pages. Use `crawl:scholarships` for browser-rendered pages; it defaults to Playwright's bundled Chromium. Set `CRAWLER_BROWSER_CHANNEL=chrome` only when you want to force the installed Google Chrome channel for local debugging.
+
+Static requests enforce status checks, HTML content-type checks, a 20-second default timeout, and a 3 MB default response limit. Browser and static extraction retain at most 200,000 readable characters per page. Override these cautiously with `CRAWLER_PAGE_TIMEOUT_MS`, `CRAWLER_MAX_RESPONSE_BYTES`, or `CRAWLER_MAX_PAGE_TEXT_CHARACTERS`.
 
 ## Test Plan
 
@@ -176,8 +190,10 @@ Use `crawl:scholarships:static` for static HTML pages. Use `crawl:scholarships` 
 - Confirm concurrent crawling works across multiple domains.
 - Confirm per-domain throttling prevents too many requests to one site.
 - Verify extracted scholarship fields against source pages.
-- Verify every staged record has non-empty required fields or explicit fallback values.
-- Check that inferred values are marked as inferred.
+- Verify unresolved values remain `null` and block `import_ready`.
+- Verify canonical categories match the profile form, scholarship forms, crawler, and SQL enums.
+- Verify negated requirements and ambiguous multi-category pages do not become hard filters.
+- Verify every extracted restrictive value includes a supporting excerpt.
 - Manually review winner-background data before using it to adjust matching logic.
 
 ## Assumptions
@@ -186,4 +202,4 @@ Use `crawl:scholarships:static` for static HTML pages. Use `crawl:scholarships` 
 - Crawlee + Playwright is the default crawler stack.
 - The crawler should improve matching accuracy, but staged data should be reviewed before production use.
 - Concurrent crawling is allowed only when the target website permits it.
-- Missing values should be filled as much as possible through evidence, reasoning, or explicit fallback labels.
+- Missing or ambiguous scholarship values should remain unresolved until a human verifies them from an authoritative source.

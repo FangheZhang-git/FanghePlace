@@ -2,12 +2,12 @@
     const dom = window.ScholarMatchDOM;
 
     async function loadMySubmissions() {
-        const token = localStorage.getItem("token");
+        const token = Boolean((await ScholarMatchSession.ready).user);
         const container = document.getElementById("mySubmissions");
         if (!container || !token) return;
 
-        const res = await fetch("/my-submissions", {
-            headers: { "Authorization": "Bearer " + token }
+        const res = await ScholarMatchSession.request("/my-submissions", {
+            headers: {}
         });
         const submissions = await res.json();
         dom.clear(container);

@@ -1,0 +1,111 @@
+{
+  "version": 1,
+  "rules": [
+    {
+      "description": "Block private project files",
+      "priority": 10,
+      "enabled": true,
+      "if": {
+        "or": [
+          {
+            "attr": "http.path",
+            "op": "matches",
+            "value": "/server.js"
+          },
+          {
+            "attr": "http.path",
+            "op": "matches",
+            "value": "/security.js"
+          },
+          {
+            "attr": "http.path",
+            "op": "matches",
+            "value": "/requestValidation.js"
+          },
+          {
+            "attr": "http.path",
+            "op": "matches",
+            "value": "/scholarshipMatcher.js"
+          },
+          {
+            "attr": "http.path",
+            "op": "matches",
+            "value": "/scholarshipResearch.js"
+          },
+          {
+            "attr": "http.path",
+            "op": "matches",
+            "value": "/package*.json"
+          },
+          {
+            "attr": "http.path",
+            "op": "matches",
+            "value": "/*.sql"
+          },
+          {
+            "attr": "http.path",
+            "op": "matches",
+            "value": "/*.md"
+          },
+          {
+            "attr": "http.path",
+            "op": "matches",
+            "value": "/.env*"
+          },
+          {
+            "attr": "http.path",
+            "op": "matches",
+            "value": "/.git*"
+          },
+          {
+            "attr": "http.path",
+            "op": "matches",
+            "value": "/.DS_Store"
+          },
+          {
+            "attr": "http.path",
+            "op": "matches",
+            "value": "/database*"
+          },
+          {
+            "attr": "http.path",
+            "op": "matches",
+            "value": "/crawler*"
+          },
+          {
+            "attr": "http.path",
+            "op": "matches",
+            "value": "/node_modules*"
+          },
+          {
+            "attr": "http.path",
+            "op": "matches",
+            "value": "/storage*"
+          },
+          {
+            "attr": "http.path",
+            "op": "matches",
+            "value": "/outputs*"
+          },
+          {
+            "attr": "http.path",
+            "op": "matches",
+            "value": "/test/*"
+          },
+          {
+            "attr": "http.path",
+            "op": "matches",
+            "value": "/deployment*"
+          }
+        ]
+      },
+      "then": {
+        "action": "block",
+        "params": {
+          "status": 404,
+          "body": "Not found"
+        }
+      }
+    }
+  ]
+}

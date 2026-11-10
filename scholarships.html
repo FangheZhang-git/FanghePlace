@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Researched Scholarships | ScholarMatch</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="css/header.css">
+    <link rel="stylesheet" href="css/results.css">
+  <script src="javascript/session.js"></script>
+</head>
+<body>
+    <header class="header"><a href="index.html"><h1 class="templogo">ScholarMatch</h1></a></header>
+    <main class="resultsSection research-page">
+        <h2>Explore researched scholarships</h2>
+        <p>Modest awards, clear requirements, and sources you can check. A blank requirement means we could not establish it—not that everyone qualifies.</p>
+        <label for="scholarshipFilter">Find an award, interest, or eligibility condition</label>
+        <input id="scholarshipFilter" type="search" placeholder="Try manufacturing, military, or essay">
+        <p id="directoryStatus" role="status">Loading scholarships…</p>
+        <div id="researchDirectory"></div>
+    </main>
+    <script src="javascript/safeDom.js"></script>
+    <script src="javascript/scholarshipResearch.js"></script>
+</body>
+</html>

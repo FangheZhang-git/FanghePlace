@@ -4,3 +4,8 @@ AGENTS.md
 scholarmatch-production.sql
 crawler/output/
 storage/
+
+# Local macOS metadata and report preview intermediates
+.DS_Store
+outputs/*/report_render/
+outputs/**/*.inspect.ndjson

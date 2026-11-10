@@ -2,6 +2,7 @@ const fs = require("fs/promises");
 const path = require("path");
 const { collectScholarshipClues } = require("./extractors");
 const { buildEmptyWinnerBackground, fillScholarshipFallbacks } = require("./inference");
+const { attachValidation } = require("./validation");
 
 const PROJECT_ROOT = path.resolve(__dirname, "..", "..");
 const DEFAULT_SEEDS_PATH = path.join(PROJECT_ROOT, "crawler", "seeds", "scholarships.json");
@@ -15,12 +16,69 @@ const USER_AGENT = "ScholarMatchCrawler/0.1 (+https://scholarmatch.net)";
 const DRY_RUN = process.argv.includes("--dry-run");
 const STATIC_MODE = process.argv.includes("--static") || process.env.CRAWLER_MODE === "static";
 const ALLOW_EXISTING = process.argv.includes("--allow-existing") || process.env.CRAWLER_ALLOW_EXISTING === "1";
+const PAGE_TIMEOUT_MS = Number(process.env.CRAWLER_PAGE_TIMEOUT_MS || 20000);
+const MAX_RESPONSE_BYTES = Number(process.env.CRAWLER_MAX_RESPONSE_BYTES || 3000000);
+const MAX_PAGE_TEXT_CHARACTERS = Number(process.env.CRAWLER_MAX_PAGE_TEXT_CHARACTERS || 200000);
 
 const delayByDomain = new Map();
 const logger = {
   info: (message) => console.log(`[info] ${message}`),
   warning: (message) => console.warn(`[warn] ${message}`)
 };
+
+async function readLimitedText(response, maxBytes = MAX_RESPONSE_BYTES) {
+  const declaredLength = Number(response.headers.get("content-length") || 0);
+  if (declaredLength > maxBytes) throw new Error(`Response exceeds ${maxBytes} byte limit.`);
+
+  if (!response.body?.getReader) {
+    const text = await response.text();
+    if (Buffer.byteLength(text) > maxBytes) throw new Error(`Response exceeds ${maxBytes} byte limit.`);
+    return text;
+  }
+
+  const reader = response.body.getReader();
+  const chunks = [];
+  let totalBytes = 0;
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    totalBytes += value.byteLength;
+    if (totalBytes > maxBytes) {
+      await reader.cancel();
+      throw new Error(`Response exceeds ${maxBytes} byte limit.`);
+    }
+    chunks.push(Buffer.from(value));
+  }
+
+  return Buffer.concat(chunks).toString("utf8");
+}
+
+async function fetchTextResource(url, { timeoutMs = PAGE_TIMEOUT_MS, maxBytes = MAX_RESPONSE_BYTES, expectedTypes = ["text/html", "application/xhtml+xml"] } = {}) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    const response = await fetch(url, {
+      signal: controller.signal,
+      headers: { "User-Agent": USER_AGENT },
+      redirect: "follow"
+    });
+    if (!response.ok) throw new Error(`HTTP ${response.status} ${response.statusText}`.trim());
+
+    const contentType = (response.headers.get("content-type") || "").toLowerCase();
+    if (expectedTypes?.length && contentType && !expectedTypes.some((type) => contentType.includes(type))) {
+      throw new Error(`Unexpected content type ${contentType}.`);
+    }
+
+    return {
+      finalUrl: response.url || url,
+      text: await readLimitedText(response, maxBytes)
+    };
+  } finally {
+    clearTimeout(timeout);
+  }
+}
 
 function getArgValue(name, fallback) {
   const index = process.argv.indexOf(name);
@@ -317,40 +375,34 @@ async function filterExistingScholarshipRequests(requests) {
 async function readSeeds() {
   const seedPath = getArgValue("--seeds", DEFAULT_SEEDS_PATH);
   const raw = await fs.readFile(seedPath, "utf8");
-  return JSON.parse(raw).map((seed) => ({
+  return JSON.parse(raw).map((seed, crawlIndex) => ({
     uniqueKey: seed.url,
     url: seed.url,
     userData: {
-      seedName: seed.name || ""
+      seedName: seed.name || "",
+      crawlIndex
     }
   }));
 }
 
-async function fetchRobotsForDomain(domain) {
-  const robotsUrl = `https://${domain}/robots.txt`;
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), Number(process.env.CRAWLER_ROBOTS_TIMEOUT_MS || 5000));
-
+async function fetchRobotsForUrl(url) {
+  const robotsUrl = new URL("/robots.txt", url).href;
   try {
-    const response = await fetch(robotsUrl, {
-      signal: controller.signal,
-      headers: {
-        "User-Agent": USER_AGENT
-      }
+    const result = await fetchTextResource(robotsUrl, {
+      timeoutMs: Number(process.env.CRAWLER_ROBOTS_TIMEOUT_MS || 5000),
+      maxBytes: Number(process.env.CRAWLER_ROBOTS_MAX_BYTES || 500000),
+      expectedTypes: ["text/plain"]
     });
-    const body = response.ok ? await response.text() : "";
-    return parseRobotsTxt(body);
+    return parseRobotsTxt(result.text);
   } catch (error) {
-    logger.warning(`Could not fetch robots.txt for ${domain}; using conservative allow with throttling. ${error.message}`);
+    logger.warning(`Could not fetch robots.txt for ${new URL(url).origin}; allowing seeded URL with throttling. ${error.message}`);
     return parseRobotsTxt("");
-  } finally {
-    clearTimeout(timeout);
   }
 }
 
 function parseRobotsTxt(body) {
-  const disallowRules = [];
-  let appliesToUs = false;
+  const groups = [];
+  let currentGroup = null;
 
   for (const rawLine of body.split(/\r?\n/)) {
     const line = rawLine.split("#")[0].trim();
@@ -361,20 +413,42 @@ function parseRobotsTxt(body) {
     const value = rawValue.join(":").trim();
 
     if (key === "user-agent") {
-      const agent = value.toLowerCase();
-      appliesToUs = agent === "*" || USER_AGENT.toLowerCase().includes(agent);
+      if (!currentGroup || currentGroup.rules.length) {
+        currentGroup = { agents: [], rules: [] };
+        groups.push(currentGroup);
+      }
+      currentGroup.agents.push(value.toLowerCase());
       continue;
     }
 
-    if (appliesToUs && key === "disallow" && value) {
-      disallowRules.push(value);
+    if (currentGroup && (key === "allow" || key === "disallow") && value) {
+      currentGroup.rules.push({ type: key, path: value });
     }
+  }
+
+  const crawlerToken = "scholarmatchcrawler";
+  const specificGroups = groups.filter((group) => group.agents.some((agent) => agent !== "*" && crawlerToken.includes(agent)));
+  const applicableGroups = specificGroups.length
+    ? specificGroups
+    : groups.filter((group) => group.agents.includes("*"));
+  const rules = applicableGroups.flatMap((group) => group.rules);
+
+  function matchesRule(path, rulePath) {
+    const endAnchored = rulePath.endsWith("$");
+    const source = (endAnchored ? rulePath.slice(0, -1) : rulePath)
+      .replace(/[.+?^${}()|[\]\\]/g, "\\$&")
+      .replace(/\*/g, ".*");
+    return new RegExp(`^${source}${endAnchored ? "$" : ""}`).test(path);
   }
 
   return {
     isAllowed(url) {
-      const pathname = new URL(url).pathname;
-      return !disallowRules.some((rule) => pathname.startsWith(rule));
+      const parsed = new URL(url);
+      const path = `${parsed.pathname}${parsed.search}`;
+      const matches = rules.filter((rule) => matchesRule(path, rule.path));
+      if (!matches.length) return true;
+      matches.sort((a, b) => b.path.length - a.path.length || (a.type === "allow" ? -1 : 1));
+      return matches[0].type === "allow";
     }
   };
 }
@@ -385,12 +459,12 @@ async function filterAllowedRequests(requests) {
   const skipped = [];
 
   for (const request of requests) {
-    const domain = domainFromUrl(request.url);
-    if (!robotsByDomain.has(domain)) {
-      robotsByDomain.set(domain, await fetchRobotsForDomain(domain));
+    const origin = new URL(request.url).origin;
+    if (!robotsByDomain.has(origin)) {
+      robotsByDomain.set(origin, await fetchRobotsForUrl(request.url));
     }
 
-    const robots = robotsByDomain.get(domain);
+    const robots = robotsByDomain.get(origin);
     if (robots.isAllowed(request.url, USER_AGENT) !== false) {
       allowed.push(request);
     } else {
@@ -405,18 +479,17 @@ async function waitForDomainThrottle(url) {
   const domain = domainFromUrl(url);
   const delayMs = Number(process.env.CRAWLER_DOMAIN_DELAY_MS || 3000);
   const now = Date.now();
-  const nextAllowedAt = delayByDomain.get(domain) || 0;
-  const waitMs = Math.max(0, nextAllowedAt - now);
+  const reservedAt = Math.max(now, delayByDomain.get(domain) || 0);
+  const waitMs = reservedAt - now;
+  delayByDomain.set(domain, reservedAt + delayMs);
 
   if (waitMs > 0) {
     await new Promise((resolve) => setTimeout(resolve, waitMs));
   }
-
-  delayByDomain.set(domain, Date.now() + delayMs);
 }
 
 async function extractPageData(page, request) {
-  return page.evaluate(({ seedName, sourceUrl }) => {
+  return page.evaluate(({ seedName, sourceUrl, crawlIndex, maxTextCharacters }) => {
     const ignoredSelectors = "script, style, noscript, svg, canvas, iframe";
     document.querySelectorAll(ignoredSelectors).forEach((node) => node.remove());
 
@@ -440,6 +513,7 @@ async function extractPageData(page, request) {
 
     return {
       seedName,
+      crawlIndex,
       url: sourceUrl,
       finalUrl: location.href,
       title: document.title,
@@ -447,11 +521,13 @@ async function extractPageData(page, request) {
       headings,
       tables,
       links,
-      text: (main.innerText || main.textContent || "").replace(/\s+/g, " ").trim()
+      text: (main.innerText || main.textContent || "").replace(/\s+/g, " ").trim().slice(0, maxTextCharacters)
     };
   }, {
     seedName: request.userData.seedName,
-    sourceUrl: request.url
+    sourceUrl: request.url,
+    crawlIndex: request.userData.crawlIndex,
+    maxTextCharacters: MAX_PAGE_TEXT_CHARACTERS
   });
 }
 
@@ -509,6 +585,7 @@ function extractStaticPageData(html, request, finalUrl) {
 
   return {
     seedName: request.userData.seedName,
+    crawlIndex: request.userData.crawlIndex,
     url: request.url,
     finalUrl,
     title,
@@ -516,11 +593,13 @@ function extractStaticPageData(html, request, finalUrl) {
     headings,
     tables,
     links,
-    text: stripTags(withoutIgnored)
+    text: stripTags(withoutIgnored).slice(0, MAX_PAGE_TEXT_CHARACTERS)
   };
 }
 
 async function writeOutputs(scholarships, winnerBackground) {
+  scholarships.sort((a, b) => (a.crawl_index ?? Number.MAX_SAFE_INTEGER) - (b.crawl_index ?? Number.MAX_SAFE_INTEGER));
+  winnerBackground.sort((a, b) => (a.crawl_index ?? Number.MAX_SAFE_INTEGER) - (b.crawl_index ?? Number.MAX_SAFE_INTEGER));
   await fs.mkdir(OUTPUT_DIR, { recursive: true });
   await fs.writeFile(SCHOLARSHIP_OUTPUT_PATH, `${JSON.stringify(scholarships, null, 2)}\n`);
   await fs.writeFile(WINNER_OUTPUT_PATH, `${JSON.stringify(winnerBackground, null, 2)}\n`);
@@ -536,7 +615,7 @@ async function handleExtractedPage(pageData, scholarships, winnerBackground) {
     ...pageData,
     url: pageData.finalUrl || pageData.url
   });
-  const scholarship = fillScholarshipFallbacks(extracted);
+  const scholarship = attachValidation(fillScholarshipFallbacks(extracted));
 
   scholarships.push(scholarship);
   winnerBackground.push(buildEmptyWinnerBackground(scholarship));
@@ -556,25 +635,22 @@ async function runStaticCrawler(allowed) {
 
       try {
         await waitForDomainThrottle(request.url);
-        const response = await fetch(request.url, {
-          headers: {
-            "User-Agent": USER_AGENT
-          },
-          redirect: "follow"
-        });
-        const html = await response.text();
-        const pageData = extractStaticPageData(html, request, response.url || request.url);
+        const response = await fetchTextResource(request.url);
+        const pageData = extractStaticPageData(response.text, request, response.finalUrl);
         await handleExtractedPage(pageData, scholarships, winnerBackground);
       } catch (error) {
-        scholarships.push(fillScholarshipFallbacks({
+        const failed = attachValidation(fillScholarshipFallbacks({
           name: request.userData.seedName || "Unknown",
           provider: domainFromUrl(request.url),
           source_url: request.url,
+          crawl_index: request.userData.crawlIndex,
           source_text: "",
           extraction_status: "failed",
           confidence: "low",
           description: `Static crawler failed: ${error.message}`
         }));
+        scholarships.push(failed);
+        winnerBackground.push(buildEmptyWinnerBackground(failed));
       }
     }
   }
@@ -625,8 +701,16 @@ async function main() {
       }
     },
     preNavigationHooks: [
-      async ({ request }, gotoOptions) => {
+      async ({ page, request }, gotoOptions) => {
         await waitForDomainThrottle(request.url);
+        await page.route("**/*", async (route) => {
+          const resourceType = route.request().resourceType();
+          if (["font", "image", "media"].includes(resourceType)) {
+            await route.abort();
+          } else {
+            await route.continue();
+          }
+        });
         gotoOptions.waitUntil = "domcontentloaded";
       }
     ],
@@ -638,27 +722,25 @@ async function main() {
     async failedRequestHandler({ request }, error) {
       try {
         logger.warning(`Browser crawl failed for ${request.url}; trying static fallback.`);
-        const response = await fetch(request.url, {
-          headers: {
-            "User-Agent": USER_AGENT
-          },
-          redirect: "follow"
-        });
-        const html = await response.text();
-        const pageData = extractStaticPageData(html, request, response.url || request.url);
+        const response = await fetchTextResource(request.url);
+        const pageData = extractStaticPageData(response.text, request, response.finalUrl);
         const beforeCount = scholarships.length;
         await handleExtractedPage(pageData, scholarships, winnerBackground);
         scholarships[beforeCount].extraction_status = "extracted_with_static_fallback";
+        scholarships[beforeCount] = attachValidation(scholarships[beforeCount]);
       } catch (fallbackError) {
-        scholarships.push(fillScholarshipFallbacks({
+        const failed = attachValidation(fillScholarshipFallbacks({
           name: request.userData.seedName || "Unknown",
           provider: domainFromUrl(request.url),
           source_url: request.url,
+          crawl_index: request.userData.crawlIndex,
           source_text: "",
           extraction_status: "failed",
           confidence: "low",
           description: `Crawler failed: ${error.message}; static fallback failed: ${fallbackError.message}`
         }));
+        scholarships.push(failed);
+        winnerBackground.push(buildEmptyWinnerBackground(failed));
       }
     }
   });
@@ -672,9 +754,19 @@ async function main() {
   log.info(`Wrote ${SKIPPED_OUTPUT_PATH}`);
 }
 
-main().then(() => {
-  process.exit(0);
-}).catch((error) => {
-  console.error(error);
-  process.exit(1);
-});
+if (require.main === module) {
+  main().then(() => {
+    process.exit(0);
+  }).catch((error) => {
+    console.error(error);
+    process.exit(1);
+  });
+}
+
+module.exports = {
+  extractStaticPageData,
+  fetchTextResource,
+  isLikelySameScholarship,
+  parseRobotsTxt,
+  readLimitedText
+};
