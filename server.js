@@ -4,7 +4,8 @@ const mysql = require("mysql2/promise");
 const cors = require("cors");
 const helmet = require("helmet");
 const rateLimit = require("express-rate-limit");
-const jwt = require('jsonwebtoken');
+const { sessionSecurity } = require('./sessionSecurity');
+const { contentSecurityPolicy } = require('./contentSecurity');
 
 const { securityConfig, publicFiles, scalarBody, validateAuth, accountLimiter, captcha } = require('./security');
 const security = securityConfig();
@@ -12,6 +13,14 @@ const JWT_SECRET = process.env.JWT_SECRET;
 
 const app = express();
 const bcrypt = require('bcrypt');
+
+const db = mysql.createPool({
+    host: process.env.DB_HOST,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_NAME
+});
+const sessions = sessionSecurity(db, security, JWT_SECRET);
 
 const allowedOrigins = new Set([
     "http://localhost:8080",
@@ -29,7 +38,7 @@ app.disable("x-powered-by");
 app.set("trust proxy", security.trustProxy);
 
 app.use(helmet({
-    contentSecurityPolicy: false
+    contentSecurityPolicy: contentSecurityPolicy(__dirname, security.production)
 }));
 app.use(cors({
     origin(origin, callback) {
@@ -47,9 +56,23 @@ app.use((req, res, next) => {
     res.set('Cache-Control', 'no-store');
     next();
 });
+// CSP reports are bounded telemetry, never authenticated application writes.
+app.post('/api/csp-report', express.json({ type: 'application/csp-report', limit: '8kb' }), (req, res) => {
+    const report = req.body?.['csp-report'];
+    if (report && typeof report['violated-directive'] === 'string') {
+        const directive = report['violated-directive'].split(' ')[0].replace(/[^a-z-]/g, '').slice(0,40);
+        let source = 'inline-or-unknown';
+        try { source = new URL(report['blocked-uri']).origin; } catch {}
+        console.warn('CSP blocked resource:', directive, source);
+    }
+    res.sendStatus(204);
+});
+app.use(sessions.protectWrites);
 app.use(express.json({ limit: "50kb" }));
 app.use(scalarBody);
 app.use(require('./requestValidation').validateWrite);
+app.get('/api/session', sessions.describe);
+app.post('/logout', sessions.logout);
 app.get('/api/security-config', (req, res) => res.json({ siteKey: security.siteKey }));
 const verifyCaptcha = captcha(security);
 const loginAccountLimiter = accountLimiter();
@@ -78,12 +101,7 @@ const submissionLimiter = rateLimit({
     message: { message: "Too many scholarship submissions. Please try again later." }
 });
 
-const db = mysql.createPool({
-    host: process.env.DB_HOST,
-    user: process.env.DB_USER,
-    password: process.env.DB_PASSWORD,
-    database: process.env.DB_NAME
-});
+
 
 function isValidHttpUrl(value) {
     if (value === null || value === undefined || value === "") return true;
@@ -116,23 +134,7 @@ function validateApplyUrl(value) {
 
 
 
-function authenticateToken(req, res, next) {
-    const authHeader = req.headers['authorization'];
-    const token = authHeader && authHeader.split(' ')[1];
-
-    if (!token) {
-        return res.status(401).json({ message: "Access denied. No token provided." });
-    }
-
-    jwt.verify(token, JWT_SECRET, { algorithms: ['HS256'] }, (err, user) => {
-        if (err) {
-            return res.status(403).json({ message: "Invalid or expired token." });
-        }
-
-        req.user = user;
-        next();
-    });
-}
+const authenticateToken = sessions.authenticate;
 
 function requireAdmin(req, res, next) {
     if (!req.user.is_admin) {
@@ -327,16 +329,8 @@ app.post('/signup', authLimiter, validateAuth, verifyCaptcha, async (req, res) =
         );
 
         const userId = result.insertId;
-        const token = jwt.sign(
-            { id: userId, email: email, username: username, is_admin: 0 },
-            JWT_SECRET,
-            { expiresIn: "1h" }
-        );
-
-        res.status(201).json({
-            message: "User created successfully",
-            token: token
-        });
+        const sessionUser = await sessions.issue(req, res, { id: userId, username, is_admin: 0 });
+        res.status(201).json({ message: "User created successfully", user: sessionUser });
 
 
 
@@ -370,21 +364,8 @@ app.post('/login', authLimiter, validateAuth, loginAccountLimiter, verifyCaptcha
             return res.status(401).json({ message: "Invalid email or password" });
         }
 
-        const token = jwt.sign(
-            {
-                id: user.id,
-                email: user.email,
-                username: user.username,
-                is_admin: user.is_admin
-            },
-            JWT_SECRET,
-            { expiresIn: "1h" }
-        );
-
-        res.json({
-            message: "Login successful",
-            token
-        });
+        const sessionUser = await sessions.issue(req, res, user);
+        res.json({ message: "Login successful", user: sessionUser });
 
     } catch (err) {
         console.error(err);
@@ -1218,9 +1199,19 @@ app.use((err, req, res, next) => {
 });
 
 const HOST = security.host;
-const server = app.listen(PORT, HOST, () => {
-    console.log(`Server running on port ${PORT}`);
+sessions.initialize().then(() => {
+    const server = app.listen(PORT, HOST, () => {
+        console.log(`Server running on port ${PORT}`);
+    });
+    server.requestTimeout = 30000;
+    server.headersTimeout = 10000;
+    const cleanup = setInterval(() => {
+        db.query('DELETE FROM web_sessions WHERE expires_at <= UTC_TIMESTAMP()')
+            .catch(() => console.error('Expired-session cleanup failed'));
+    }, 15 * 60 * 1000);
+    cleanup.unref();
+}).catch(() => {
+    console.error('Session storage initialization failed. Check the database connection and migration permissions.');
+    process.exitCode = 1;
+    db.end();
 });
-
-server.requestTimeout = 30000;
-server.headersTimeout = 10000;

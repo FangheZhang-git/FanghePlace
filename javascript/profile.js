@@ -13,7 +13,7 @@
     }
 
     async function loadDashboard() {
-        const token = localStorage.getItem("token");
+        const token = Boolean((await ScholarMatchSession.ready).user);
         if (!token) {
             alert("Please log in first.");
             window.location.href = "login.html";
@@ -21,8 +21,8 @@
         }
 
         try {
-            const response = await fetch("/profile", {
-                headers: { "Authorization": "Bearer " + token }
+            const response = await ScholarMatchSession.request("/profile", {
+                headers: {}
             });
             const profile = await response.json();
             dom.clear(personalInfoContainer);
@@ -59,13 +59,13 @@
     }
 
     async function loadUserComments() {
-        const token = localStorage.getItem("token");
+        const token = Boolean((await ScholarMatchSession.ready).user);
         const container = document.getElementById("userComments");
         if (!token || !container) return;
 
         try {
-            const res = await fetch("/my-comments", {
-                headers: { "Authorization": "Bearer " + token }
+            const res = await ScholarMatchSession.request("/my-comments", {
+                headers: {}
             });
 
             if (!res.ok) {
@@ -106,12 +106,12 @@
     }
 
     async function loadMySubmissions() {
-        const token = localStorage.getItem("token");
+        const token = Boolean((await ScholarMatchSession.ready).user);
         const container = document.getElementById("mySubmissions");
         if (!token || !container) return;
 
-        const res = await fetch("/my-submissions", {
-            headers: { "Authorization": "Bearer " + token }
+        const res = await ScholarMatchSession.request("/my-submissions", {
+            headers: {}
         });
         const submissions = await res.json();
         dom.clear(container);

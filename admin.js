@@ -1,4 +1,5 @@
-const token = localStorage.getItem("token");
+(async () => {
+const token = Boolean((await ScholarMatchSession.ready).user);
 let editingId = null;
 let editingSubmissionId = null;
 
@@ -9,10 +10,8 @@ if (!token) {
 
 async function loadScholarships() {
 
-    const res = await fetch("/admin/scholarships", {
-        headers: {
-            "Authorization": "Bearer " + token
-        }
+    const res = await ScholarMatchSession.request("/admin/scholarships", {
+        headers: {}
     });
 
     if (res.status === 403) {
@@ -65,11 +64,9 @@ async function deleteScholarship(id) {
 
     if (!confirm("Delete this scholarship?")) return;
 
-    await fetch(`/admin/scholarships/${id}`, {
+    await ScholarMatchSession.request(`/admin/scholarships/${id}`, {
         method: "DELETE",
-        headers: {
-            "Authorization": "Bearer " + token
-        }
+        headers: {}
     });
 
     loadScholarships();
@@ -79,10 +76,8 @@ async function editScholarship(id) {
 
     editingId = id;
 
-    const res = await fetch(`/admin/scholarships/${id}`, {
-        headers: {
-            "Authorization": "Bearer " + token
-        }
+    const res = await ScholarMatchSession.request(`/admin/scholarships/${id}`, {
+        headers: {}
     });
 
     const sch = await res.json();
@@ -175,13 +170,11 @@ async function addScholarship() {
 
     const method = editingId || editingSubmissionId ? "PUT" : "POST";
 
-    const res = await fetch(url, {
+    const res = await ScholarMatchSession.request(url, {
         method: method,
 
         headers: {
-            "Content-Type": "application/json",
-            "Authorization": "Bearer " + token
-        },
+            "Content-Type": "application/json"},
 
         body: JSON.stringify(data)
 
@@ -228,12 +221,10 @@ function filterScholarships() {
 
 async function loadSubmissions() {
 
-    const token = localStorage.getItem("token");
+    const token = Boolean((await ScholarMatchSession.ready).user);
 
-    const res = await fetch("/admin/submissions", {
-        headers: {
-            "Authorization": "Bearer " + token
-        }
+    const res = await ScholarMatchSession.request("/admin/submissions", {
+        headers: {}
     });
 
     const submissions = await res.json();
@@ -282,13 +273,11 @@ async function loadSubmissions() {
 
 async function approveSubmission(id) {
 
-    const token = localStorage.getItem("token");
+    const token = Boolean((await ScholarMatchSession.ready).user);
 
-    const res = await fetch(`/admin/submissions/${id}/approve`, {
+    const res = await ScholarMatchSession.request(`/admin/submissions/${id}/approve`, {
         method: "POST",
-        headers: {
-            "Authorization": "Bearer " + token
-        }
+        headers: {}
     });
 
     const result = await res.json();
@@ -302,13 +291,11 @@ async function approveSubmission(id) {
 
 async function rejectSubmission(id) {
 
-    const token = localStorage.getItem("token");
+    const token = Boolean((await ScholarMatchSession.ready).user);
 
-    const res = await fetch(`/admin/submissions/${id}/reject`, {
+    const res = await ScholarMatchSession.request(`/admin/submissions/${id}/reject`, {
         method: "POST",
-        headers: {
-            "Authorization": "Bearer " + token
-        }
+        headers: {}
     });
 
     const result = await res.json();
@@ -322,12 +309,10 @@ async function rejectSubmission(id) {
 
 async function editSubmission(id) {
 
-    const token = localStorage.getItem("token");
+    const token = Boolean((await ScholarMatchSession.ready).user);
 
-    const res = await fetch(`/admin/submissions/${id}`, {
-        headers: {
-            "Authorization": "Bearer " + token
-        }
+    const res = await ScholarMatchSession.request(`/admin/submissions/${id}`, {
+        headers: {}
     });
 
     const data = await res.json();
@@ -398,3 +383,7 @@ loadSubmissions();
 
 
 loadScholarships();
+
+document.getElementById('searchInput').addEventListener('keyup', filterScholarships);
+document.querySelector('.add-btn').addEventListener('click', addScholarship);
+})().catch(() => alert('Unable to load the admin session. Please reload.'));

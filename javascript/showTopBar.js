@@ -44,7 +44,7 @@ async function loadSearchResults() {
     }
 
     title.textContent = `Search results for "${query}"`;
-    const response = await fetch(`/search?query=${encodeURIComponent(query)}`);
+    const response = await ScholarMatchSession.request(`/search?query=${encodeURIComponent(query)}`);
     const matches = await response.json();
     clear(resultsDiv);
 

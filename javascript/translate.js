@@ -53,7 +53,7 @@ function loadGoogleTranslateScript() {
 
     const script = document.createElement("script");
     script.id = "googleTranslateScript";
-    script.src = "//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit";
+    script.src = "https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit";
     document.body.appendChild(script);
 }
 

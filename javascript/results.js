@@ -38,7 +38,7 @@ function createMatchCard(scholarship) {
 }
 
 async function loadMatches() {
-    const token = localStorage.getItem("token");
+    const token = Boolean((await ScholarMatchSession.ready).user);
     if (!token) {
         alert("Please log in first.");
         window.location.href = "login.html";
@@ -46,8 +46,8 @@ async function loadMatches() {
     }
 
     try {
-        const response = await fetch("/match", {
-            headers: { "Authorization": "Bearer " + token }
+        const response = await ScholarMatchSession.request("/match", {
+            headers: {}
         });
         const data = await response.json();
         clear(container);

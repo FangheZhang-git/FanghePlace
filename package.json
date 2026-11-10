@@ -10,7 +10,7 @@
     "crawl:scholarships:static": "node crawler/src/run-scholarship-crawler.js --static",
     "start": "node server.js",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "test:security": "node --test test/security.test.js"
+    "test:security": "node --test test/security.test.js test/session.test.js"
   },
   "repository": {
     "type": "git",
@@ -31,11 +31,15 @@
     "express": "^5.2.1",
     "express-rate-limit": "^8.5.2",
     "helmet": "^8.2.0",
-    "jsonwebtoken": "^9.0.3",
     "mysql2": "^3.17.0"
   },
   "devDependencies": {
     "crawlee": "^3.17.0",
     "playwright": "^1.61.1"
+  },
+  "overrides": {
+    "@crawlee/core": {
+      "minimatch": "11.0.1"
+    }
   }
 }

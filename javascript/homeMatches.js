@@ -80,16 +80,14 @@ function createHomeMatchCard(scholarship) {
 async function loadHomeMatches() {
   if (!homeMatchesContainer) return;
 
-  const token = localStorage.getItem("token");
+  const token = Boolean((await ScholarMatchSession.ready).user);
   homeMatchesContainer.textContent = "";
 
   if (!token) return;
 
   try {
-    const response = await fetch("/match", {
-      headers: {
-        "Authorization": "Bearer " + token
-      }
+    const response = await ScholarMatchSession.request("/match", {
+      headers: {}
     });
 
     if (!response.ok) return;

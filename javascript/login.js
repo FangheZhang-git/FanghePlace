@@ -53,15 +53,7 @@ form.addEventListener("submit", async (e) => {
 
     const messageElement = document.getElementById("message");
     if (response.ok) {
-        localStorage.setItem("token", data.token);
-
-        // Decode JWT payload
-        const payload = JSON.parse(
-            atob(data.token.split(".")[1])
-        );
-
-        localStorage.setItem("user_id", payload.id);
-        localStorage.setItem("username", payload.username);
+        const payload = data.user;
 
         messageElement.innerText = "Login successful!";
         messageElement.style.color = "green";

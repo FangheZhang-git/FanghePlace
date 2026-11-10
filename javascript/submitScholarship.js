@@ -2,7 +2,7 @@ let editingSubmissionId = null;
 
 async function addScholarship() {
 
-    const token = localStorage.getItem("token");
+    const token = Boolean((await ScholarMatchSession.ready).user);
     const messageElement = document.getElementById("message");
 
     const data = {
@@ -34,12 +34,10 @@ async function addScholarship() {
     let url = "/submit-scholarship";
     let method = "POST";
 
-    const res = await fetch(url, {
+    const res = await ScholarMatchSession.request(url, {
         method: method,
         headers: {
-            "Content-Type": "application/json",
-            "Authorization": "Bearer " + token
-        },
+            "Content-Type": "application/json"},
         body: JSON.stringify(data)
     });
 

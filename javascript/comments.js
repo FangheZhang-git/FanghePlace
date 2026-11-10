@@ -67,7 +67,7 @@ function renderComments(comments) {
 async function loadComments(id) {
     renderState("Loading student comments…");
     try {
-        const res = await fetch(`/scholarships/${id}/comments`);
+        const res = await ScholarMatchSession.request(`/scholarships/${id}/comments`);
         const data = await res.json();
         if (!res.ok || !Array.isArray(data)) throw new Error(data.message || data.error || "Comments could not be loaded.");
         renderComments(data);
@@ -78,7 +78,7 @@ async function loadComments(id) {
 }
 
 async function openComments(value) {
-    const token = localStorage.getItem("token");
+    const token = Boolean((await ScholarMatchSession.ready).user);
     const id = recordId(value);
     if (!token) return alert("Please log in first.");
     if (!id || !modal) return;
@@ -93,7 +93,7 @@ async function openComments(value) {
 }
 
 async function submitComment() {
-    const token = localStorage.getItem("token");
+    const token = Boolean((await ScholarMatchSession.ready).user);
     const text = input.value.trim();
     if (!text) {
         setFeedback("Write a comment before posting.", "error");
@@ -107,9 +107,9 @@ async function submitComment() {
     submitButton.textContent = "Posting…";
     setFeedback("Posting your comment…");
     try {
-        const res = await fetch(`/scholarships/${currentScholarshipId}/comment`, {
+        const res = await ScholarMatchSession.request(`/scholarships/${currentScholarshipId}/comment`, {
             method: "POST",
-            headers: { "Content-Type": "application/json", "Authorization": "Bearer " + token },
+            headers: { "Content-Type": "application/json"},
             body: JSON.stringify({ comment: text })
         });
         const data = await res.json();

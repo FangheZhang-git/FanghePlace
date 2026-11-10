@@ -34,16 +34,6 @@ form.addEventListener("submit", async (e) => {
     if(response.ok){
         messageBox.classList.remove("error");
 
-        //save login token
-        localStorage.setItem("token", data.token);
-
-        const payload = JSON.parse(
-            atob(data.token.split(".")[1])
-        );
-
-        localStorage.setItem("user_id", payload.id);
-        localStorage.setItem("username", payload.username);
-
         goToLoadingPage("index.html", "Creating your account");
     }
     else{

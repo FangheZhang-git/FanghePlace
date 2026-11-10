@@ -40,10 +40,7 @@ closeLanguageModal.addEventListener("click", () => {
 
 
 // Logout
-logoutBtn.addEventListener("click", function () {
-
-    localStorage.removeItem("token");
-
-    window.location.href = "index.html";
-
+logoutBtn.addEventListener("click", async function () {
+    try { await ScholarMatchSession.logout(); } catch (error) { alert(error.message); }
 });
+saveLanguageSettings.addEventListener('click', saveLanguage);

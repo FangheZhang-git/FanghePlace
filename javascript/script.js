@@ -1,7 +1,7 @@
 document.getElementById("Form").addEventListener("submit", async function (e) {
   e.preventDefault();
 
-  const token = localStorage.getItem("token");
+  const token = Boolean((await ScholarMatchSession.ready).user);
 
   if (!token) {
     alert("Please log in first.");
@@ -43,12 +43,10 @@ document.getElementById("Form").addEventListener("submit", async function (e) {
 
   console.log("PROFILE SUBMIT:", studentProfile);
 
-  const res = await fetch("/profile", {
+  const res = await ScholarMatchSession.request("/profile", {
     method: "POST",
     headers: {
-      "Content-Type": "application/json",
-      "Authorization": "Bearer " + token
-    },
+      "Content-Type": "application/json"},
     body: JSON.stringify(studentProfile)
   });
 
