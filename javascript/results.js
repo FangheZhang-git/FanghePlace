@@ -1,6 +1,6 @@
 (function () {
 const container = document.getElementById("scholarshipResults");
-const { applyLink, clear, heartIcon, labeledLine, recordId, textElement } = window.ScholarMatchDOM;
+const { applyLink, clear, heartIcon, labeledLine, matchFooter, recordId, textElement } = window.ScholarMatchDOM;
 
 function formatAmount(minAmount, maxAmount) {
     if (minAmount && maxAmount) return `$${minAmount} - $${maxAmount}`;
@@ -32,7 +32,7 @@ function createMatchCard(scholarship) {
     card.appendChild(labeledLine("Match Score", String(Math.round(Number(scholarship.score) || 0))));
 
     const link = applyLink(scholarship.apply_url, "apply-right-now", "Apply Now");
-    if (link) card.appendChild(link);
+    card.appendChild(matchFooter(scholarship.score, link));
 
     return card;
 }

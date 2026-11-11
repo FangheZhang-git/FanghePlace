@@ -49,6 +49,18 @@
         return link;
     }
 
+    function matchFooter(score, link) {
+        const footer = textElement("div", "", "match-card-footer");
+        if (link) footer.appendChild(link);
+        const value = Number(score);
+        if (Number.isFinite(value) && value >= 85) {
+            footer.appendChild(textElement("span", "Strongly Suggested", "match-tag match-tag-strong"));
+        } else if (Number.isFinite(value) && value >= 70) {
+            footer.appendChild(textElement("span", "Suggested", "match-tag match-tag-suggested"));
+        }
+        return footer;
+    }
+
     function heartIcon(value) {
         const id = recordId(value);
         if (!id) return null;
@@ -107,6 +119,7 @@
         clear,
         heartIcon,
         labeledLine,
+        matchFooter,
         recordId,
         safeHttpUrl,
         textElement

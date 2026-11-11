@@ -66,6 +66,39 @@ a{
     background-color: #1e40af;
 }
 
+.match-card-footer {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem 1rem;
+  margin-top: 1rem;
+}
+
+.match-card-footer .apply-right-now {
+  margin-top: 0;
+}
+
+.match-tag {
+  margin-left: auto;
+  padding: 0.45rem 0.8rem;
+  border-radius: 999px;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.match-tag-strong {
+  background: #e3f5e9;
+  color: #176334;
+}
+
+.match-tag-suggested {
+  background: #fff2bf;
+  color: #745300;
+}
+
 .heart-icon {
   position: absolute;
   top: 0.9375rem;

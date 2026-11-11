@@ -62,17 +62,8 @@ function createHomeMatchCard(scholarship) {
     String(Math.round(Number(scholarship.score) || 0))
   );
 
-  const applyUrl = ScholarMatchDOM.safeHttpUrl(scholarship.apply_url);
-
-  if (applyUrl) {
-    const applyLink = document.createElement("a");
-    applyLink.className = "apply-right-now";
-    applyLink.href = applyUrl;
-    applyLink.target = "_blank";
-    applyLink.rel = "noopener noreferrer";
-    applyLink.textContent = "Apply Now";
-    card.appendChild(applyLink);
-  }
+  const applyLink = ScholarMatchDOM.applyLink(scholarship.apply_url, "apply-right-now", "Apply Now");
+  card.appendChild(ScholarMatchDOM.matchFooter(scholarship.score, applyLink));
 
   return card;
 }
