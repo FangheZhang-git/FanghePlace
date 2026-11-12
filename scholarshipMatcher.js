@@ -1,18 +1,30 @@
 function numberOrNull(value) {
-    if (value === null || value === undefined || value === "") return null;
+    if (value === null || value === undefined || value === "") {
+        return null;
+    }
     const number = Number(value);
-    return Number.isFinite(number) ? number : null;
+    if (!Number.isFinite(number)) {
+        return null;
+    }
+    return number;
 }
 
 function booleanOrNull(value) {
-    if (value === true || value === 1 || value === "1") return true;
-    if (value === false || value === 0 || value === "0") return false;
+    if (value === true || value === 1 || value === "1") {
+        return true;
+    }
+    if (value === false || value === 0 || value === "0") {
+        return false;
+    }
     return null;
 }
 
 function isUnrestricted(value) {
-    return value === null || value === undefined || value === "" ||
-        ["any", "no restriction", "prefer not to say"].includes(String(value).trim().toLowerCase());
+    if (value === null || value === undefined || value === "") {
+        return true;
+    }
+    const normalized = String(value).trim().toLowerCase();
+    return ["any", "no restriction", "prefer not to say"].includes(normalized);
 }
 
 function sameValue(left, right) {
@@ -20,150 +32,251 @@ function sameValue(left, right) {
 }
 
 function dateOnly(value) {
-    if (!value) return null;
-    if (value instanceof Date && !Number.isNaN(value.getTime())) return value.toISOString().slice(0, 10);
+    if (!value) {
+        return null;
+    }
+    if (value instanceof Date && !Number.isNaN(value.getTime())) {
+        return value.toISOString().slice(0, 10);
+    }
     const match = String(value).match(/^\d{4}-\d{2}-\d{2}/);
-    return match ? match[0] : null;
+    if (match) {
+        return match[0];
+    }
+    return null;
 }
 
 function evaluateScholarship(profile, scholarship, today = new Date().toISOString().slice(0, 10)) {
     const eliminatedBy = [];
-    const scoreBreakdown = [];
     let score = 50;
 
-    function profileNumber(field) {
+    // Missing student numbers use the least favorable value for matching.
+    function studentNumber(field) {
         const value = numberOrNull(profile[field]);
-        return value !== null ? value : field === "income" ? 200000 : 0;
+        if (value !== null) {
+            return value;
+        }
+        if (field === "income") {
+            return 200000;
+        }
+        return 0;
     }
 
-    function adjust(factor, points, reason) {
+    function addPoints(points) {
         score += points;
-        scoreBreakdown.push({ factor, points, reason });
     }
 
-    function threshold(field, profileField, label, direction = "minimum") {
-        const requirement = numberOrNull(scholarship[field]);
-        if (requirement === null || requirement === 0) return;
-        const value = profileNumber(profileField);
-        const failed = direction === "maximum" ? value > requirement : value < requirement;
-        if (failed) eliminatedBy.push(`${label} does not meet the published ${direction} of ${requirement}.`);
+    function checkMinimum(scholarshipField, studentField, label) {
+        const minimum = numberOrNull(scholarship[scholarshipField]);
+        if (minimum === null || minimum === 0) {
+            return;
+        }
+        if (studentNumber(studentField) < minimum) {
+            eliminatedBy.push(`${label} does not meet the published minimum of ${minimum}.`);
+        }
     }
 
-    threshold("min_gpa", "gpa", "GPA");
-    threshold("min_income", "income", "household income");
-    threshold("max_income", "income", "household income", "maximum");
+    function checkMaximum(scholarshipField, studentField, label) {
+        const maximum = numberOrNull(scholarship[scholarshipField]);
+        if (maximum === null || maximum === 0) {
+            return;
+        }
+        if (studentNumber(studentField) > maximum) {
+            eliminatedBy.push(`${label} does not meet the published maximum of ${maximum}.`);
+        }
+    }
 
-    // When both test thresholds exist, scholarship records generally mean SAT OR ACT.
+    // First check requirements that can make a student ineligible.
+    checkMinimum("min_gpa", "gpa", "GPA");
+    checkMinimum("min_income", "income", "household income");
+    checkMaximum("max_income", "income", "household income");
+
     const satMinimum = numberOrNull(scholarship.min_sat);
     const actMinimum = numberOrNull(scholarship.min_act);
-    const sat = profileNumber("sat");
-    const act = profileNumber("act");
+    const sat = studentNumber("sat");
+    const act = studentNumber("act");
     const hasSatRule = satMinimum !== null && satMinimum > 0;
     const hasActRule = actMinimum !== null && actMinimum > 0;
+
+    // A scholarship with both thresholds accepts a qualifying SAT or ACT.
     if (hasSatRule && hasActRule) {
-        if (!(sat >= satMinimum || act >= actMinimum)) {
+        if (sat < satMinimum && act < actMinimum) {
             eliminatedBy.push(`Test score does not meet either the ${satMinimum} SAT or ${actMinimum} ACT requirement.`);
         }
-    } else if (hasSatRule) threshold("min_sat", "sat", "SAT");
-    else if (hasActRule) threshold("min_act", "act", "ACT");
+    } else if (hasSatRule) {
+        checkMinimum("min_sat", "sat", "SAT");
+    } else if (hasActRule) {
+        checkMinimum("min_act", "act", "ACT");
+    }
 
     const research = scholarship.research;
-    if (research && !research.stale) {
+    const currentResearch = research && !research.stale;
+    if (currentResearch) {
         const closingDate = dateOnly(research.closes_on || scholarship.deadline);
         if (research.cycle_status === "closed" || (closingDate && closingDate < today)) {
             eliminatedBy.push("The published application cycle is closed.");
         }
-    } else if (!research && dateOnly(scholarship.deadline) && dateOnly(scholarship.deadline) < today) {
-        eliminatedBy.push("The published deadline has passed.");
-    }
-
-    const researchRules = research && !research.stale ? research.rules || {} : {};
-    for (const [profileField, allowed, label] of [
-        ["residency", researchRules.states, "residency"],
-        ["citizenship", researchRules.citizenship, "citizenship"]
-    ]) {
-        if (!Array.isArray(allowed) || !allowed.length) continue;
-        const value = profile[profileField];
-        if (!value || !allowed.some(option => sameValue(option, value))) eliminatedBy.push(`${label} is outside the published eligible options.`);
-    }
-
-    for (const [scholarshipField, profileField, label, points] of [
-        ["citizenship", "citizenship", "citizenship", 2],
-        ["state", "residency", "residency", 4],
-        ["major", "major", "major", 7],
-        ["race", "race", "race or ethnicity", 2]
-    ]) {
-        if (scholarshipField === "citizenship" && Array.isArray(researchRules.citizenship)) continue;
-        if (scholarshipField === "state" && Array.isArray(researchRules.states)) continue;
-        const requirement = scholarship[scholarshipField];
-        if (isUnrestricted(requirement)) continue;
-        const value = profile[profileField];
-        if (!value || !sameValue(requirement, value)) eliminatedBy.push(`${label} does not match the published requirement.`);
-        else adjust(label, points * 2, `Exact ${label} match.`);
-    }
-
-    for (const [scholarshipField, profileField, label] of [
-        ["requires_essay", "willing_essay", "essay willingness"],
-        ["first_gen_only", "first_gen", "first-generation status"]
-    ]) {
-        if (booleanOrNull(scholarship[scholarshipField]) !== true) continue;
-        const value = booleanOrNull(profile[profileField]);
-        if (value !== true) eliminatedBy.push(`The scholarship requires ${label}.`);
-        else adjust(label, scholarshipField === "first_gen_only" ? 12 : 6, `Meets the ${label} requirement.`);
-    }
-
-    for (const [field, label, positive, negative] of [
-        ["leadership", "leadership", 22, -16],
-        ["award", "awards", 20, -14]
-    ]) {
-        const preference = scholarship[field];
-        if (!preference || preference === "not_considered") continue;
-        const value = booleanOrNull(profile[field]);
-        if (preference === "required") {
-            if (value === false) eliminatedBy.push(`The scholarship requires ${label}.`);
-            else if (value === null) eliminatedBy.push(`The scholarship requires ${label}.`);
-            else adjust(label, positive, `Meets the required ${label} criterion.`);
-        } else if (preference === "preferred") {
-            if (value === true) adjust(label, positive, `Matches the preferred ${label} criterion.`);
-            else if (value === false) adjust(label, negative, `Does not match the preferred ${label} criterion.`);
-            else adjust(label, negative, `Missing ${label} is scored as not meeting the preference.`);
+    } else if (!research) {
+        const deadline = dateOnly(scholarship.deadline);
+        if (deadline && deadline < today) {
+            eliminatedBy.push("The published deadline has passed.");
         }
     }
 
-    const advancedPreferred = booleanOrNull(scholarship.advanced_coursework_preferred) === true;
-    if (advancedPreferred) {
-        const advancedValues = [profile.has_ap, profile.has_honors, profile.has_dual_enrollment].map(booleanOrNull);
-        if (advancedValues.some(value => value === true)) adjust("advanced coursework", 18, "Matches the advanced-coursework preference.");
-        else adjust("advanced coursework", -12, "Missing or absent advanced coursework does not match the preference.");
+    const researchRules = currentResearch ? research.rules || {} : {};
+
+    function checkResearchOptions(studentField, allowedOptions, label) {
+        if (!Array.isArray(allowedOptions) || allowedOptions.length === 0) {
+            return;
+        }
+        const studentValue = profile[studentField];
+        let matches = false;
+        for (const option of allowedOptions) {
+            if (studentValue && sameValue(option, studentValue)) {
+                matches = true;
+                break;
+            }
+        }
+        if (!matches) {
+            eliminatedBy.push(`${label} is outside the published eligible options.`);
+        }
     }
 
-    const gpa = profileNumber("gpa");
+    checkResearchOptions("residency", researchRules.states, "residency");
+    checkResearchOptions("citizenship", researchRules.citizenship, "citizenship");
+
+    function checkIdentityRequirement(scholarshipField, studentField, label, points) {
+        const requirement = scholarship[scholarshipField];
+        if (isUnrestricted(requirement)) {
+            return;
+        }
+        const studentValue = profile[studentField];
+        if (!studentValue || !sameValue(requirement, studentValue)) {
+            eliminatedBy.push(`${label} does not match the published requirement.`);
+        } else {
+            addPoints(points);
+        }
+    }
+
+    // Current research options take precedence over the single database value.
+    if (!Array.isArray(researchRules.citizenship)) {
+        checkIdentityRequirement("citizenship", "citizenship", "citizenship", 4);
+    }
+    if (!Array.isArray(researchRules.states)) {
+        checkIdentityRequirement("state", "residency", "residency", 8);
+    }
+    checkIdentityRequirement("major", "major", "major", 14);
+    checkIdentityRequirement("race", "race", "race or ethnicity", 4);
+
+    if (booleanOrNull(scholarship.requires_essay) === true) {
+        if (booleanOrNull(profile.willing_essay) !== true) {
+            eliminatedBy.push("The scholarship requires essay willingness.");
+        } else {
+            addPoints(6);
+        }
+    }
+    if (booleanOrNull(scholarship.first_gen_only) === true) {
+        if (booleanOrNull(profile.first_gen) !== true) {
+            eliminatedBy.push("The scholarship requires first-generation status.");
+        } else {
+            addPoints(12);
+        }
+    }
+
+    function checkAchievement(field, label, positivePoints, negativePoints) {
+        const preference = scholarship[field];
+        if (!preference || preference === "not_considered") {
+            return;
+        }
+        const studentHasAchievement = booleanOrNull(profile[field]);
+        if (preference === "required") {
+            if (studentHasAchievement !== true) {
+                eliminatedBy.push(`The scholarship requires ${label}.`);
+            } else {
+                addPoints(positivePoints);
+            }
+        } else if (preference === "preferred") {
+            if (studentHasAchievement === true) {
+                addPoints(positivePoints);
+            } else {
+                addPoints(negativePoints);
+            }
+        }
+    }
+
+    checkAchievement("leadership", "leadership", 22, -16);
+    checkAchievement("award", "awards", 20, -14);
+
+    // The remaining factors change the ranking of eligible scholarships.
+    if (booleanOrNull(scholarship.advanced_coursework_preferred) === true) {
+        const hasAdvancedCoursework =
+            booleanOrNull(profile.has_ap) === true ||
+            booleanOrNull(profile.has_honors) === true ||
+            booleanOrNull(profile.has_dual_enrollment) === true;
+        if (hasAdvancedCoursework) {
+            addPoints(18);
+        } else {
+            addPoints(-12);
+        }
+    }
+
+    const gpa = studentNumber("gpa");
     const gpaMinimum = numberOrNull(scholarship.min_gpa);
-    if (gpa !== null && gpaMinimum !== null && gpaMinimum > 0 && gpa >= gpaMinimum) {
-        adjust("GPA fit", Math.min(30, 16 + Math.round((gpa - gpaMinimum) * 14)), "GPA meets or exceeds the published minimum.");
+    if (gpaMinimum !== null && gpaMinimum > 0 && gpa >= gpaMinimum) {
+        const gpaPoints = 16 + Math.round((gpa - gpaMinimum) * 14);
+        addPoints(Math.min(30, gpaPoints));
     } else if (scholarship.type === "pure_merit_based") {
-        adjust("academic strength", Math.max(-18, Math.min(24, Math.round((gpa - 2.5) * 16))), "Academic strength affects a merit-based application.");
+        const academicPoints = Math.round((gpa - 2.5) * 16);
+        addPoints(Math.max(-18, Math.min(24, academicPoints)));
     }
 
-    const testFits = [];
-    if (hasSatRule && sat >= satMinimum) testFits.push(Math.min(25, 14 + Math.floor((sat - satMinimum) / 25)));
-    if (hasActRule && act >= actMinimum) testFits.push(Math.min(25, 14 + Math.floor((act - actMinimum))));
-    if (testFits.length) adjust("test-score fit", Math.max(...testFits), "SAT or ACT meets the published test requirement.");
-
-    const income = profileNumber("income");
-    if (["pure_need_based", "merit_plus_need"].includes(scholarship.type)) {
-        const needPoints = income <= 30000 ? 24 : income <= 60000 ? 18 : income <= 100000 ? 10 : income <= 150000 ? 2 : -18;
-        adjust("financial-need fit", needPoints, "Household-income range affects the scholarship's need component.");
+    let bestTestPoints = null;
+    if (hasSatRule && sat >= satMinimum) {
+        bestTestPoints = Math.min(25, 14 + Math.floor((sat - satMinimum) / 25));
+    }
+    if (hasActRule && act >= actMinimum) {
+        const actPoints = Math.min(25, 14 + Math.floor(act - actMinimum));
+        if (bestTestPoints === null || actPoints > bestTestPoints) {
+            bestTestPoints = actPoints;
+        }
+    }
+    if (bestTestPoints !== null) {
+        addPoints(bestTestPoints);
     }
 
-    const awardAmount = numberOrNull(scholarship.max_amount) ?? numberOrNull(scholarship.min_amount);
-    if (awardAmount && awardAmount > 0) adjust("award value", Math.min(18, Math.max(3, Math.round(Math.log10(awardAmount) * 5 - 8))), "Award value affects ranking.");
-    if (booleanOrNull(scholarship.renewable) === true) adjust("renewability", 10, "Renewable funding increases ranking.");
+    if (scholarship.type === "pure_need_based" || scholarship.type === "merit_plus_need") {
+        const income = studentNumber("income");
+        let needPoints;
+        if (income <= 30000) {
+            needPoints = 24;
+        } else if (income <= 60000) {
+            needPoints = 18;
+        } else if (income <= 100000) {
+            needPoints = 10;
+        } else if (income <= 150000) {
+            needPoints = 2;
+        } else {
+            needPoints = -18;
+        }
+        addPoints(needPoints);
+    }
 
+    let awardAmount = numberOrNull(scholarship.max_amount);
+    if (awardAmount === null) {
+        awardAmount = numberOrNull(scholarship.min_amount);
+    }
+    if (awardAmount && awardAmount > 0) {
+        const awardPoints = Math.round(Math.log10(awardAmount) * 5 - 8);
+        addPoints(Math.min(18, Math.max(3, awardPoints)));
+    }
+    if (booleanOrNull(scholarship.renewable) === true) {
+        addPoints(10);
+    }
+
+    const eligible = eliminatedBy.length === 0;
     return {
-        eligible: eliminatedBy.length === 0,
+        eligible: eligible,
         score: Math.max(0, Math.round(score)),
-        match_status: eliminatedBy.length ? "ineligible" : "eligible",
+        match_status: eligible ? "eligible" : "ineligible",
         confirmation_needed: [],
         eliminated_by: [...new Set(eliminatedBy)]
     };
