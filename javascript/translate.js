@@ -25,6 +25,12 @@
         const script = document.createElement('script');
         script.id = 'gtranslateScript';
         script.src = 'https://cdn.gtranslate.net/widgets/latest/dropdown.js';
+        script.addEventListener('load', () => {
+            const language = savedLanguage();
+            if (typeof window.doGTranslate === 'function') {
+                window.doGTranslate(`en|${language}`);
+            }
+        });
         document.body.appendChild(script);
     }
 
@@ -39,8 +45,6 @@
 
         if (typeof window.doGTranslate === 'function') {
             window.doGTranslate(`en|${language}`);
-        } else {
-            location.reload();
         }
     }
 
