@@ -14,7 +14,7 @@ function contentSecurityPolicy(root, production) {
     return { directives: {
         reportUri: ['/api/csp-report'],
         defaultSrc: ["'self'"],
-        scriptSrc: ["'self'", ...hashes, 'https://challenges.cloudflare.com', 'https://translate.google.com', 'https://translate.googleapis.com', 'https://www.gstatic.com'],
+        scriptSrc: ["'self'", ...hashes, 'https://challenges.cloudflare.com', 'https://cdn.gtranslate.net', 'https://translate.google.com', 'https://translate.googleapis.com', 'https://www.gstatic.com'],
         scriptSrcAttr: ["'none'"],
         styleSrc: ["'self'", "'unsafe-inline'", 'https://translate.googleapis.com', 'https://www.gstatic.com', 'https://fonts.googleapis.com'],
         imgSrc: ['https://fonts.gstatic.com', "'self'", 'data:', 'https://translate.google.com', 'https://translate.googleapis.com', 'https://www.google.com', 'https://www.gstatic.com'],

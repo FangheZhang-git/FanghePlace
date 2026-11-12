@@ -1,152 +1,60 @@
-function googleTranslateElementInit() {
-    new google.translate.TranslateElement(
-        { pageLanguage: "en" },
-        "google_translate_element"
-    );
-}
+(function () {
+    const supportedLanguages = ['en', 'zh-CN', 'es', 'fr'];
 
-window.googleTranslateElementInit = googleTranslateElementInit;
-
-function hideGoogleTranslateChrome() {
-    if (document.getElementById("googleTranslateChromeStyles")) {
-        return;
+    function savedLanguage() {
+        const language = localStorage.getItem('language');
+        return supportedLanguages.includes(language) ? language : 'en';
     }
 
-    const style = document.createElement("style");
-    style.id = "googleTranslateChromeStyles";
-    style.textContent = `
-        .goog-te-banner-frame,
-        .goog-te-banner-frame.skiptranslate,
-        .goog-te-balloon-frame,
-        iframe.goog-te-banner-frame,
-        body > .skiptranslate,
-        #goog-gt-tt,
-        .goog-tooltip,
-        .goog-tooltip:hover {
-            display: none !important;
-            visibility: hidden !important;
+    function clearOldGoogleCookie() {
+        document.cookie = 'googtrans=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+        document.cookie = `googtrans=; path=/; domain=${location.hostname}; expires=Thu, 01 Jan 1970 00:00:00 GMT`;
+    }
+
+    clearOldGoogleCookie();
+    window.gtranslateSettings = {
+        default_language: 'en',
+        languages: supportedLanguages,
+        wrapper_selector: '#google_translate_element',
+        url_structure: 'none',
+        detect_browser_language: false
+    };
+
+    function loadTranslator() {
+        if (document.getElementById('gtranslateScript')) return;
+        const script = document.createElement('script');
+        script.id = 'gtranslateScript';
+        script.src = 'https://cdn.gtranslate.net/widgets/latest/dropdown.js';
+        document.body.appendChild(script);
+    }
+
+    function saveLanguage() {
+        const select = document.getElementById('languageSelect');
+        const language = select?.value;
+        if (!supportedLanguages.includes(language)) return;
+
+        localStorage.setItem('language', language);
+        const modal = document.getElementById('languageModal');
+        if (modal) modal.classList.add('hidden');
+
+        if (typeof window.doGTranslate === 'function') {
+            window.doGTranslate(`en|${language}`);
+        } else {
+            location.reload();
         }
-
-        html,
-        body {
-            top: 0 !important;
-            margin-top: 0 !important;
-        }
-
-        .goog-text-highlight {
-            background: transparent !important;
-            box-shadow: none !important;
-        }
-    `;
-    document.head.appendChild(style);
-}
-
-function removeGoogleTranslateOffset() {
-    document.documentElement.style.top = "0";
-    document.body.style.top = "0";
-}
-
-function loadGoogleTranslateScript() {
-    if (document.getElementById("googleTranslateScript")) {
-        return;
     }
 
-    const script = document.createElement("script");
-    script.id = "googleTranslateScript";
-    script.src = "https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit";
-    document.body.appendChild(script);
-}
+    document.addEventListener('DOMContentLoaded', () => {
+        loadTranslator();
+        const select = document.getElementById('languageSelect');
+        if (select) select.value = savedLanguage();
 
-//Cookie for toggling language
-
-function setGoogleTranslateCookie(lang) {
-    // en for original text
-    if (lang === "en") {
-        document.cookie = "googtrans=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
-        document.cookie = "googtrans=; path=/; domain=" + location.hostname + "; expires=Thu, 01 Jan 1970 00:00:00 GMT";
-        return;
-    }
-
-    const value = `/en/${lang}`;
-
-    document.cookie = `googtrans=${value}; path=/`;
-
-    document.cookie = `googtrans=${value}; path=/; domain=${location.hostname}`;
-}
-
-function getSavedLanguage() {
-    return localStorage.getItem("language") || "en";
-}
-
-// Write cookie when page start loading
-// Language at Initialization
-
-//Redheart style change
-
-(function applySavedLanguageBeforeGoogleLoads() {
-    const lang = getSavedLanguage();
-    setGoogleTranslateCookie(lang);
-    hideGoogleTranslateChrome();
-
-    if (lang !== "en") {
-        document.addEventListener("DOMContentLoaded", loadGoogleTranslateScript);
-    }
-})();
-
-//For save button
-
-function saveLanguage() {
-    const lang = document.getElementById("languageSelect").value;
-
-    console.log("SAVE CLICKED:", lang);
-
-    localStorage.setItem("language", lang);
-    setGoogleTranslateCookie(lang);
-
-    // turn off modal
-    const modal = document.getElementById("languageModal");
-    if (modal) {
-        modal.classList.add("hidden");
-    }
-
-    // reload and let Google translate work
-    location.reload();
-}
-
-
-document.addEventListener("DOMContentLoaded", () => {
-    hideGoogleTranslateChrome();
-    removeGoogleTranslateOffset();
-
-    const observer = new MutationObserver(removeGoogleTranslateOffset);
-    observer.observe(document.documentElement, {
-        attributes: true,
-        attributeFilter: ["style", "class"]
-    });
-    observer.observe(document.body, {
-        attributes: true,
-        attributeFilter: ["style", "class"]
+        const modal = document.getElementById('languageModal');
+        const backdrop = document.querySelector('.modal-backdrop');
+        const closeButton = document.getElementById('closeLanguageModal');
+        if (backdrop && modal) backdrop.addEventListener('click', () => modal.classList.add('hidden'));
+        if (closeButton && modal) closeButton.addEventListener('click', () => modal.classList.add('hidden'));
     });
 
-    const modal = document.getElementById("languageModal");
-    const backdrop = document.querySelector(".modal-backdrop");
-    const closeBtn = document.getElementById("closeLanguageModal");
-    const select = document.getElementById("languageSelect");
-
-    // when modal is open, select current language
-    if (select) {
-        select.value = getSavedLanguage();
-    }
-
-    if (backdrop && modal) {
-        backdrop.addEventListener("click", () => {
-            modal.classList.add("hidden");
-        });
-    }
-
-    if (closeBtn && modal) {
-        closeBtn.addEventListener("click", () => {
-            modal.classList.add("hidden");
-        });
-    }
-});
+    window.saveLanguage = saveLanguage;
+}());
