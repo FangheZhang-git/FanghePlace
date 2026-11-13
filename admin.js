@@ -277,7 +277,8 @@ async function approveSubmission(id) {
 
     const res = await ScholarMatchSession.request(`/admin/submissions/${id}/approve`, {
         method: "POST",
-        headers: {}
+        headers: { "Content-Type": "application/json" },
+        body: "{}"
     });
 
     const result = await res.json();
@@ -295,7 +296,8 @@ async function rejectSubmission(id) {
 
     const res = await ScholarMatchSession.request(`/admin/submissions/${id}/reject`, {
         method: "POST",
-        headers: {}
+        headers: { "Content-Type": "application/json" },
+        body: "{}"
     });
 
     const result = await res.json();
